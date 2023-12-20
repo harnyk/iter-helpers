@@ -8,7 +8,7 @@ When we got one major client, we had to think about how to transfer records of m
 
 We wrote services that provide APIs for data import. Such an endpoint accepts a batch of 1000 properties - and distributes them across databases, handles authorization, quotas, and rate limits.
 
-And now, it's time to write the client. Integration engineers on the client side, of course, already rolled out their own solution based on our specifications.However, we aimed to develop our own client, ensuring compliance with the latest specifications, stability, and provision of crash logs in the correct format. In short, we started writing a command-line utility that would take huge JSONLine files as input - and send the data to our servers.
+And now, it's time to write the client. Integration engineers on the client side, of course, already rolled out their solution based on our specifications. However, we aimed to develop our client, ensuring compliance with the latest specifications, stability, and provision of crash logs in the correct format. In short, we started writing a command-line utility that would take huge JSONLine files as input - and send the data to our servers.
 
 So, the task is:
 
@@ -123,7 +123,7 @@ Great! I don't know about you, but I find the syntax of asynchronous iterators t
 
 Additionally, we have type checking out of the box. `getPropertiesBatches()` returns a stream of batches of property objects. In our case, it is `AsyncIterable<Property[]>`, and TypeScript automatically infers this type.
 
-However, besides properties, we will have many different entities that we would like to process in a similar way. This means that we need to make the "batch maker" a reusable function. For example, we can do it like this:
+However, besides properties, we will have many different entities that we would like to process similarly. This means that we need to make the "batch maker" a reusable function. For example, we can do it like this:
 
 ```ts
 async function* makeBatch<T>(
@@ -216,7 +216,7 @@ for await (const response of serverResponsesIter) {
 
 For simplicity, I'm not showing the handling of rate limiter responses here.
 
-So, this is basically the entire pipeline. Just a reminder, the data is processed in a chain, which means the entire JSON is not read into memory. It is read line by line, lines are grouped into batches, and the batches are sent to the server. Until the server responds to the first batch, the 1001st line of the JSON will not be read. The processing pipeline will wait. This effect is similar to backpressure. And it's great because it guarantees that memory will never grow unlimited and unpredictable.
+So, this is the entire pipeline. Just a reminder, the data is processed in a chain, which means the entire JSON is not read into memory. It is read line by line, lines are grouped into batches, and the batches are sent to the server. Until the server responds to the first batch, the 1001st line of the JSON will not be read. The processing pipeline will wait. This effect is similar to backpressure. And it's great because it guarantees that memory will never grow unlimited and unpredictable.
 
 ## Pipeline (`chain`)
 

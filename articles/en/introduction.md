@@ -12,8 +12,6 @@ And now, it's time to write the client. Integration engineers on the client side
 
 So, the task is:
 
-Итак, задача:
-
 -   given a JSONLine file, each line of which represents a JSON with a property. The file can contain millions of lines and weigh gigabytes. In principle, there may not be just one file, but several. The data can be split across files arbitrarily, but it doesn't change anything.
 -   given a GraphQL API that accepts, roughly, up to 1000 properties in one request - and responds with a list of IDs of successfully and unsuccessfully imported objects
 -   it is necessary to read the data as a stream, pack it into batches of 1000 objects, and send it to the server, handling errors and occasional rate limiter responses

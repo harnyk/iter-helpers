@@ -2,20 +2,20 @@
 
 ## Importing data
 
-Our company develops a product for real estate agencies. And any real estate agency works with data. Often there is a lot of this data, sometimes a very large amount. While they are stored in the database, you don't often think about their volume. We start to realize the volumes when it is necessary to transfer the entire database from one system to another.
+Our company develops a product for real estate agencies. Any real estate agency works with data. Often there is a lot of this data, sometimes a very large amount. When stored in the database, their volume is not often a concern. We start to realize the volumes when it is necessary to transfer the entire database from one system to another.
 
 When we got one major client, we had to think about how to transfer records of millions of real estate properties from multiple disparate systems that this client used before us - to our CRM.
 
-We wrote services that provide APIs for data import. Such an endpoint accepts a batch of 1000 real estate properties - and distributes them across databases, handles authorization, quotas, and rate limits.
+We wrote services that provide APIs for data import. Such an endpoint accepts a batch of 1000 properties - and distributes them across databases, handles authorization, quotas, and rate limits.
 
-And now, it's time to write the client. Integration engineers on the client side, of course, already rolled out their own solution based on our specifications. But we wanted to create our own client that would always comply with the latest version of our specification, be stable, and provide crash logs in the correct format. In short, we started writing a command-line utility that would take huge JSONLine files as input - and send the data to our servers.
+And now, it's time to write the client. Integration engineers on the client side, of course, already rolled out their own solution based on our specifications.However, we aimed to develop our own client, ensuring compliance with the latest specifications, stability, and provision of crash logs in the correct format. In short, we started writing a command-line utility that would take huge JSONLine files as input - and send the data to our servers.
 
 So, the task is:
 
 Итак, задача:
 
--   given a JSONLine file, each line of which represents a JSON with a real estate object. The file can contain millions of lines and weigh gigabytes. In principle, there may not be just one file, but several. The data can be split across files arbitrarily, but it doesn't change anything.
--   given a GraphQL API that accepts, roughly, up to 1000 real estate objects in one request - and responds with a list of IDs of successfully and unsuccessfully imported objects
+-   given a JSONLine file, each line of which represents a JSON with a property. The file can contain millions of lines and weigh gigabytes. In principle, there may not be just one file, but several. The data can be split across files arbitrarily, but it doesn't change anything.
+-   given a GraphQL API that accepts, roughly, up to 1000 properties in one request - and responds with a list of IDs of successfully and unsuccessfully imported objects
 -   it is necessary to read the data as a stream, pack it into batches of 1000 objects, and send it to the server, handling errors and occasional rate limiter responses
 
 ## Streams
@@ -35,13 +35,13 @@ const propertiesStream = createReadStream(fileName, {
 }).pipe(parseJsonLines());
 ```
 
-And now, we have a stream of real estate objects called `propertiesStream`.
+And now, we have a stream of properties called `propertiesStream`.
 
 We will build a chain of operations that will eventually send the data to our server.
 
 The next step in this pipeline is to group the streams into batches of 1000.
 
-But how can we do that? Here, we need to mention that we can continue working in the stream paradigm by writing some transform stream, to which we can pass the stream of real estate objects using the `pipe` method, and it will output batches.
+But how can we do that? Here, we need to mention that we can continue working in the stream paradigm by writing some transform stream, to which we can pass the stream of properties using the `pipe` method, and it will output batches.
 
 Something like this:
 
@@ -149,7 +149,7 @@ async function* makeBatch<T>(
 Now, thanks to the generic type T, the function can batch iterators of any entity. But only asynchronous iterators. However, we would like to make it more universal and allow it to handle synchronous iterators as well. For example, arrays.
 
 ```ts
-// The followong code will not compile:
+// The following code will not compile:
 const b = await makeBatch([1, 2, 3, 4, 5], 2);
 console.log(b);
 // [[1, 2], [3, 4], [5]]
@@ -303,7 +303,7 @@ This is how the idea of writing a separate library `@sweepbright/iter-helpers` c
 
 However, in real life, things are always a bit more complicated.
 
-Each real estate object that we import through our API has images - interior photos, layout drawings, etc. They also need to be imported, but through a different API. And if real estate objects are imported in batches, then images are imported one by one. Let's assume that we have a batch of 1000 real estate objects. And each property can have around 20 images. So we need to make one request to import the data - and 20,000 requests to import the images.
+Each property that we import through our API has images - interior photos, layout drawings, etc. They also need to be imported, but through a different API. And if properties are imported in batches, then images are imported one by one. Let's assume that we have a batch of 1000 properties. And each property can have around 20 images. So we need to make one request to import the data - and 20,000 requests to import the images.
 
 We could go straightforward and do something like this:
 

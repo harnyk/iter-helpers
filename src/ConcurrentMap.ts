@@ -1,6 +1,6 @@
 import { Fifo } from "./Fifo";
-import { Iter } from "./Iter";
-import { OperatorObject } from "./Operator";
+import type { Iter } from "./Iter";
+import type { OperatorObject } from "./Operator";
 
 export interface ConcurrentMapOptions {
     concurrency: number;

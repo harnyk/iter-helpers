@@ -1,6 +1,6 @@
 import { chain } from "./Chain";
 import { Fifo } from "./Fifo";
-import { Iter } from "./Iter";
+import type { Iter } from "./Iter";
 
 type Iteratee<T> = T extends Iter<infer U> ? U : never;
 

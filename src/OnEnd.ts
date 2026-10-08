@@ -1,5 +1,5 @@
 import { type Iter } from "./Iter";
-import { OperatorFunction } from "./Operator";
+import type { OperatorFunction } from "./Operator";
 
 export function onEnd<T>(cb: () => void): OperatorFunction<T, T> {
     return async function* onEndOperator(input: Iter<T>): Iter<T> {

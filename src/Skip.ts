@@ -1,5 +1,5 @@
 import { type Iter } from "./Iter";
-import { OperatorFunction } from "./Operator";
+import type { OperatorFunction } from "./Operator";
 
 export function skip<T>(size: number): OperatorFunction<T, T> {
     return async function* skipOperator(input: Iter<T>): Iter<T> {

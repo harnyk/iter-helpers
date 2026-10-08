@@ -24,12 +24,20 @@ export function* range(
     end?: number,
     step?: number,
 ): Generator<number> {
+    if (step === 0) {
+        throw new RangeError("range: step must not be 0");
+    }
     if (end === start) {
         return;
     }
     const ascending = end === undefined || end > start;
 
     step ??= ascending ? 1 : -1;
+
+    // a step that points away from the end can never reach it
+    if (end !== undefined && (ascending ? step < 0 : step > 0)) {
+        return;
+    }
 
     if (end === undefined) {
         for (let i = start; ; i += step) {

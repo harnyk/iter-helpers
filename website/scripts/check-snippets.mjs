@@ -13,7 +13,11 @@ import { fileURLToPath } from "node:url";
 
 const websiteDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(websiteDir, "..");
-const docsDir = resolve(process.argv[2] ?? join(websiteDir, "docs"));
+const args = process.argv.slice(2);
+const allowEmpty = args.includes("--allow-empty");
+const docsDir = resolve(
+    args.find((arg) => !arg.startsWith("--")) ?? join(websiteDir, "docs"),
+);
 const workDir = join(websiteDir, ".snippets");
 
 const HEADER =
@@ -41,7 +45,8 @@ let count = 0;
 for (const file of markdownFiles(docsDir)) {
     const lines = readFileSync(file, "utf8").split("\n");
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i].trim() !== "```ts") {
+        // ```ts, ```typescript, ```ts title="..." and ```ts {1} are all checked
+        if (!/^```(?:ts|typescript)(?:\s.*)?$/.test(lines[i].trim())) {
             continue;
         }
         const start = i + 1;
@@ -64,9 +69,14 @@ for (const file of markdownFiles(docsDir)) {
 }
 
 if (count === 0) {
-    console.log("no snippets to check");
     rmSync(workDir, { recursive: true, force: true });
-    process.exit(0);
+    if (allowEmpty) {
+        console.log("no snippets to check");
+        process.exit(0);
+    }
+    // a gate that checks nothing must not look like a pass
+    console.error(`no ts snippets found in ${docsDir}`);
+    process.exit(1);
 }
 
 writeFileSync(
@@ -94,6 +104,11 @@ const tsc = join(websiteDir, "node_modules", ".bin", "tsc");
 const result = spawnSync(tsc, ["-p", join(workDir, "tsconfig.json")], {
     encoding: "utf8",
 });
+
+if (result.error) {
+    console.error(`could not run tsc (${tsc}): ${result.error.message}`);
+    process.exit(1);
+}
 
 if (result.status === 0) {
     console.log(`${count} snippets type-check`);

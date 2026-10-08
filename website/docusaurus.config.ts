@@ -35,6 +35,9 @@ const config: Config = {
                 entryFileName: "index",
                 hidePageHeader: true,
                 hideBreadcrumbs: true,
+                // plain names in titles: the default templates leave escaped
+                // generics (`Chain\<I\>`) in the browser tab and the sidebar
+                pageTitleTemplates: { member: "{rawName}" },
                 validation: { notExported: false },
                 sidebar: { autoConfiguration: false },
             },
@@ -48,8 +51,11 @@ const config: Config = {
                 docs: {
                     routeBasePath: "/",
                     sidebarPath: "./sidebars.ts",
-                    editUrl:
-                        "https://github.com/harnyk/iter-helpers/tree/master/website/",
+                    // the API pages are generated from the TSDoc: nothing to edit
+                    editUrl: ({ docPath }) =>
+                        docPath.startsWith("api/")
+                            ? undefined
+                            : `https://github.com/harnyk/iter-helpers/tree/master/website/docs/${docPath}`,
                 },
                 blog: false,
                 theme: {

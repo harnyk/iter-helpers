@@ -4,10 +4,14 @@ on:
     push:
         branches: [master]
     pull_request:
+        # the API reference is generated from src/ with the root tsconfig and the
+        # root dependencies, so changes to them must rebuild the site too
         paths:
             - "website/**"
             - "src/**"
-            - "Readme.md"
+            - "tsconfig.json"
+            - "package.json"
+            - "pnpm-lock.yaml"
             - ".github/workflows/docs.yml"
 
 permissions:

@@ -11,7 +11,7 @@ const script = join(
     "check-snippets.mjs",
 );
 
-function run(markdown) {
+function run(markdown, ...args) {
     const dir = mkdtempSync(join(tmpdir(), "snippets-"));
     try {
         writeFileSync(join(dir, "page.md"), markdown);
@@ -21,7 +21,7 @@ function run(markdown) {
             join(dir, "api", "ignored.md"),
             "```ts\nconst x: number = 'no';\n```\n",
         );
-        return spawnSync(process.execPath, [script, dir], {
+        return spawnSync(process.execPath, [script, dir, ...args], {
             encoding: "utf8",
         });
     } finally {
@@ -61,7 +61,23 @@ test("fails with the file and line of a block that does not type-check", () => {
     assert.match(result.stdout + result.stderr, /page\.md:4/);
 });
 
-test("ignores blocks of other languages", () => {
-    const result = run("```bash\nthis is not typescript\n```\n");
+test("ignores blocks of other languages when an empty run is allowed", () => {
+    const result = run(
+        "```bash\nthis is not typescript\n```\n",
+        "--allow-empty",
+    );
     assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+test("fails when there is nothing to check, so the gate cannot go silent", () => {
+    const result = run("```bash\nthis is not typescript\n```\n");
+    assert.equal(result.status, 1);
+    assert.match(result.stdout + result.stderr, /no ts snippets/i);
+});
+
+test("checks blocks written as typescript or with a title", () => {
+    for (const fence of ["```typescript", '```ts title="a.ts"', "```ts {1}"]) {
+        const result = run(`${fence}\nconst n: number = "x";\n\`\`\`\n`);
+        assert.equal(result.status, 1, `${fence}: ${result.stdout}`);
+    }
 });

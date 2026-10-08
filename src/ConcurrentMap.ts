@@ -78,39 +78,62 @@ export class ConcurrentMap<
         });
     }
 
-    #process(input: Iter<Input>): AsyncIterable<Output | ErrorOutput> {
-        // const buffer: (Output | ErrorOutput)[] = [];
-
+    async *#process(input: Iter<Input>): AsyncGenerator<Output | ErrorOutput> {
         const fifo = new Fifo<Output | ErrorOutput>();
+        let failure: { error: unknown } | null = null;
 
-        (async () => {
-            for await (const inputItem of input) {
-                // Wait for available concurrency capacity
-                await this.#onceCapable();
-
-                const id = this.#checkOut();
-
-                Promise.resolve()
-                    .then(() => this.#mapper(inputItem))
-                    .catch((error) =>
-                        this.#errorMapper
-                            ? this.#errorMapper(inputItem, error)
-                            : Promise.reject(error),
-                    )
-                    .then((response) => {
-                        return fifo.send(response);
-                    })
-                    .finally(() => {
-                        this.#checkIn(id);
-                    });
+        const fail = (error: unknown) => {
+            if (failure) {
+                return;
             }
+            failure = { error };
+            fifo.end(error);
+        };
 
-            // Wait for remaining tasks
-            await this.#onceAllTasksCompleted();
-            fifo.end();
+        // The reading loop starts here, on the first `next()` of the consumer
+        (async () => {
+            try {
+                for await (const inputItem of input) {
+                    if (failure) {
+                        break;
+                    }
+                    // Wait for available concurrency capacity
+                    await this.#onceCapable();
+                    if (failure) {
+                        break;
+                    }
+
+                    const id = this.#checkOut();
+
+                    Promise.resolve()
+                        .then(() => this.#mapper(inputItem))
+                        .catch((error) =>
+                            this.#errorMapper
+                                ? this.#errorMapper(inputItem, error)
+                                : Promise.reject(error),
+                        )
+                        .then((response) => {
+                            if (!failure) {
+                                return fifo.send(response);
+                            }
+                        })
+                        .catch(fail)
+                        .finally(() => {
+                            this.#checkIn(id);
+                        });
+                }
+
+                // Wait for remaining tasks
+                await this.#onceAllTasksCompleted();
+                if (!failure) {
+                    fifo.end();
+                }
+            } catch (error) {
+                fail(error);
+            }
         })();
 
-        return fifo;
+        yield* fifo;
     }
 
     constructor(

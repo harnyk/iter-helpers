@@ -76,5 +76,6 @@
                 "default": "./dist/main.cjs"
             }
         }
-    }
+    },
+    "homepage": "https://harnyk.github.io/iter-helpers/"
 }

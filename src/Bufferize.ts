@@ -62,6 +62,9 @@ export function bufferize<T, R>({
         let acc: R = getInitialValue();
         let count = 0;
         let timeout: NodeJS.Timeout | null = null;
+        // the latest value handed to the output queue; the queue must not be
+        // ended before it has been delivered
+        let lastSend: Promise<void> = Promise.resolve();
 
         function cancelTimeframedFlush() {
             if (timeout) {
@@ -81,11 +84,23 @@ export function bufferize<T, R>({
         }
 
         async function flushAcc() {
+            // the timer goes first: items that arrive while the consumer is
+            // slow must be able to schedule the next flush
+            cancelTimeframedFlush();
             const result = acc;
             acc = getNextInitialValue(acc);
             count = 0;
-            await outputQueue.send(result);
-            cancelTimeframedFlush();
+            const sent = outputQueue.send(result);
+            lastSend = sent;
+            await sent;
+        }
+
+        async function settleSends() {
+            try {
+                await lastSend;
+            } catch {
+                // the queue was ended meanwhile: nothing is left to deliver
+            }
         }
 
         async function readInput() {
@@ -101,6 +116,7 @@ export function bufferize<T, R>({
             if (count > 0) {
                 await flushAcc();
             }
+            await settleSends();
             outputQueue.end();
         }
 
@@ -115,6 +131,7 @@ export function bufferize<T, R>({
                 // the queue is closed or the next accumulator could not be
                 // created: the original error is the one to report
             }
+            await settleSends();
             outputQueue.end(error);
         });
 

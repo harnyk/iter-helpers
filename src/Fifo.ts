@@ -59,19 +59,20 @@ export class Fifo<T> implements AsyncIterable<T> {
      * rejects with `chan is closed`.
      *
      * Items already in the queue are still delivered to consumers; the
-     * iteration finishes after them. If an `error` is given, every consumer
-     * receives it, thrown from the iteration, after the queued items. Ending
-     * a queue that is already ended does nothing, so the first error wins.
+     * iteration finishes after them. If an error is passed, every consumer
+     * receives it, thrown from the iteration, after the queued items; even
+     * `undefined` counts as an error when it is passed explicitly. Ending a
+     * queue that is already ended does nothing, so the first error wins.
      *
-     * @param error - the reason the queue ended, if it did not end normally
+     * @param reason - the error the queue ends with, if it did not end normally
      */
-    end(error?: unknown): void {
+    end(...reason: [error?: unknown]): void {
         if (this.#ended) {
             return;
         }
         this.#ended = true;
-        if (error !== undefined) {
-            this.#failure = { error };
+        if (reason.length > 0) {
+            this.#failure = { error: reason[0] };
         }
         this.#ch.close();
     }

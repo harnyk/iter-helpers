@@ -33,4 +33,18 @@ describe("mux - errors", () => {
         expect(result.error).toEqual(new Error("source failed"));
         expect(unhandled).toEqual([]);
     });
+
+    it("an input that throws undefined is still a failure", async () => {
+        async function* throwsUndefined() {
+            yield 1;
+            throw undefined;
+        }
+
+        const { result, unhandled } = await trackUnhandled(() =>
+            withTimeout(collect(mux([[10, 20], throwsUndefined()]))),
+        );
+
+        expect(result.failed).toBe(true);
+        expect(unhandled).toEqual([]);
+    });
 });

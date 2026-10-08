@@ -127,4 +127,52 @@ describe("concurrentMap - errors and laziness", () => {
         expect(error).toBeUndefined();
         expect([...items].sort((a, b) => a - b)).toEqual([10, 20]);
     });
+
+    it("a rejection without a reason is still a failure", async () => {
+        const { result, unhandled } = await trackUnhandled(() =>
+            withTimeout(
+                collect(
+                    chain([1, 2, 3]).concurrentMap(
+                        { concurrency: 1 },
+                        async (n) => {
+                            if (n === 2) {
+                                return Promise.reject();
+                            }
+                            return n;
+                        },
+                    ),
+                ),
+            ),
+        );
+
+        expect(result.items).toEqual([1]);
+        expect(result.failed).toBe(true);
+        expect(unhandled).toEqual([]);
+    });
+
+    it("an error while the loop waits for capacity reaches the consumer", async () => {
+        const calls: number[] = [];
+
+        const { result, unhandled } = await trackUnhandled(() =>
+            withTimeout(
+                collect(
+                    chain([1, 2, 3, 4, 5]).concurrentMap(
+                        { concurrency: 2 },
+                        async (n) => {
+                            calls.push(n);
+                            await sleep(10);
+                            if (n === 2) {
+                                throw new Error("boom");
+                            }
+                            return n;
+                        },
+                    ),
+                ),
+            ),
+        );
+
+        expect(result.error).toEqual(new Error("boom"));
+        expect(calls.length).toBeLessThan(5);
+        expect(unhandled).toEqual([]);
+    });
 });

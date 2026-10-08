@@ -27,14 +27,14 @@ export function withTimeout<T>(promise: Promise<T>, ms = 1000): Promise<T> {
 
 export async function collect<T>(
     iterable: AsyncIterable<T>,
-): Promise<{ items: T[]; error?: unknown }> {
+): Promise<{ items: T[]; failed: boolean; error?: unknown }> {
     const items: T[] = [];
     try {
         for await (const item of iterable) {
             items.push(item);
         }
     } catch (error) {
-        return { items, error };
+        return { items, failed: true, error };
     }
-    return { items };
+    return { items, failed: false };
 }

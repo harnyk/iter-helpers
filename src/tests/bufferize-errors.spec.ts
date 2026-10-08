@@ -101,4 +101,62 @@ describe("bufferize family - errors", () => {
         expect(result.error).toEqual(new Error("source failed"));
         expect(unhandled).toEqual([]);
     });
+
+    it("a source that throws undefined is still a failure", async () => {
+        async function* throwsUndefined() {
+            yield 1;
+            throw undefined;
+        }
+
+        const { result, unhandled } = await trackUnhandled(() =>
+            withTimeout(collect(chain(throwsUndefined()).batch(5))),
+        );
+
+        expect(result.items).toEqual([[1]]);
+        expect(result.failed).toBe(true);
+        expect(unhandled).toEqual([]);
+    });
+
+    describe.each([
+        { name: "the source ends", throwAtEnd: false },
+        { name: "the source fails", throwAtEnd: true },
+    ])("timeFrame with a slow consumer, when $name", ({ throwAtEnd }) => {
+        it("does not lose a timer flush that is still waiting for the consumer", async () => {
+            async function* source() {
+                yield 1;
+                await sleep(30);
+                yield 2;
+                await sleep(30);
+                yield 3;
+                await sleep(30);
+                if (throwAtEnd) {
+                    throw new Error("source failed");
+                }
+            }
+
+            const batches: number[][] = [];
+            let failed = false;
+            const consumer = (async () => {
+                try {
+                    for await (const batch of chain(source()).batch({
+                        size: 100,
+                        timeFrame: 10,
+                    })) {
+                        batches.push(batch);
+                        await sleep(150);
+                    }
+                } catch {
+                    failed = true;
+                }
+            })();
+
+            const { unhandled } = await trackUnhandled(() =>
+                withTimeout(consumer, 3000),
+            );
+
+            expect(batches.flat()).toEqual([1, 2, 3]);
+            expect(failed).toBe(throwAtEnd);
+            expect(unhandled).toEqual([]);
+        });
+    });
 });

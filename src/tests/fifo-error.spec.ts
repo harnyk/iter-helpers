@@ -56,4 +56,16 @@ describe("fifo - end(error)", () => {
         expect(items).toEqual([1]);
         expect(error).toBeUndefined();
     });
+
+    it("an explicit undefined reason is still a failure", async () => {
+        const fifo = new Fifo<number>();
+        await fifo.send(1);
+        fifo.end(undefined);
+
+        const result = await withTimeout(collect(fifo));
+
+        expect(result.items).toEqual([1]);
+        expect(result.failed).toBe(true);
+        expect(result.error).toBeUndefined();
+    });
 });

@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-/* eslint-disable indent */
 import { chain } from "../Chain";
 import { range } from "../Range";
 import { sleep } from "./sleep";

@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import { Fifo } from "./Fifo";
 import { Iter } from "./Iter";
 import { OperatorObject } from "./Operator";

@@ -29,7 +29,7 @@
     "scripts": {
         "build": "tsc",
         "check-types": "tsc --noEmit",
-        "lint": "eslint --ext .ts ./src",
+        "lint": "eslint .",
         "test": "vitest run",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
@@ -40,14 +40,16 @@
         "@harnyk/chan": "^0.1.1"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/node": "^22.20.5",
-        "@typescript-eslint/eslint-plugin": "^6.9.0",
-        "@typescript-eslint/parser": "^6.9.0",
         "@vitest/coverage-v8": "^5.0.3",
-        "eslint": "^8.52.0",
+        "eslint": "^10.12.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.13.0",
         "prettier": "3.9.9",
         "tsx": "^3.12.10",
         "typescript": ">=4.7",
+        "typescript-eslint": "^8.71.1",
         "vitest": "^5.0.3"
     },
     "packageManager": "pnpm@10.28.0"

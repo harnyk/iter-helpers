@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import { chain } from "./Chain";
 import { Fifo } from "./Fifo";
 import { Iter } from "./Iter";

@@ -6,6 +6,9 @@ import type { OperatorFunction } from "./Operator";
  * emits only the first and the last item of each group as a pair. The last
  * group may be smaller; a group of one item yields that item twice.
  *
+ * If the source throws, the interval collected so far is emitted first and
+ * the error is thrown after it.
+ *
  * @param size - the number of items in a group
  * @returns an operator function
  *

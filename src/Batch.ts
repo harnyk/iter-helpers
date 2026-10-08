@@ -18,6 +18,9 @@ export type BatchOptions =
  * after its first item. The remainder at the end of the source is emitted as
  * a smaller batch.
  *
+ * If the source throws, the batch collected so far is emitted first and the
+ * error is thrown after it.
+ *
  * @param sizeOrOptions - the batch size or `BatchOptions`
  * @returns an operator function
  *

@@ -15,17 +15,31 @@ export class Mux<
 
     [Symbol.asyncIterator](): AsyncIterator<E> {
         const fifo = new Fifo<E>({ highWatermark: 1 });
+        let failed = false;
 
-        const stopPromises = this.inputs.map((input) =>
+        const fail = (error: unknown) => {
+            if (failed) {
+                return;
+            }
+            failed = true;
+            fifo.end(error);
+        };
+
+        // Once the fifo has ended, the other inputs fail on their next
+        // `send`; that rejection lands in `fail`, which ignores it.
+        const runs = this.inputs.map((input) =>
             chain(input)
                 .tap(async (value) => {
                     await fifo.send(value as E);
                 })
-                .consume(),
+                .consume()
+                .catch(fail),
         );
 
-        Promise.all(stopPromises).then(() => {
-            fifo.end();
+        Promise.all(runs).then(() => {
+            if (!failed) {
+                fifo.end();
+            }
         });
 
         return fifo[Symbol.asyncIterator]();
@@ -37,6 +51,9 @@ export class Mux<
  *
  * Items are emitted as they arrive, so the order across inputs is not
  * defined; the order within each input is kept.
+ *
+ * If an input throws, the iteration ends with that error and the other inputs
+ * stop at their next item.
  *
  * @param inputs - the sources to merge
  * @returns an async iterable of the items of all inputs

@@ -182,7 +182,7 @@ export class Chain<I> implements AsyncIterable<I> {
     }
 
     /**
-     * Passes through only the first `size` items (at least 1) and stops
+     * Passes through only the first `size` items and stops
      * iterating the source.
      *
      * @see {@link take}

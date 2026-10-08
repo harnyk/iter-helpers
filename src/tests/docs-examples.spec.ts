@@ -212,4 +212,53 @@ describe("docs examples", () => {
         expect([...range(3, 0)]).toEqual([3, 2, 1]);
         expect(await chain(range(1)).take(3).toArray()).toEqual([1, 2, 3]);
     });
+
+    it("errors: a failing source ends the iteration after the partial batch", async () => {
+        async function* failing() {
+            yield 1;
+            yield 2;
+            throw new Error("source failed");
+        }
+
+        const seen: number[][] = [];
+        let message = "";
+        try {
+            for await (const batch of chain(failing()).batch(5)) {
+                seen.push(batch);
+            }
+        } catch (error) {
+            message = (error as Error).message;
+        }
+
+        expect(seen).toEqual([[1, 2]]);
+        expect(message).toBe("source failed");
+    });
+
+    it("Fifo: end(error) delivers the queued items, then throws", async () => {
+        const fifo = new Fifo<number>();
+        await fifo.send(1);
+        fifo.end(new Error("boom"));
+
+        const seen: number[] = [];
+        let message = "";
+        try {
+            for await (const item of fifo) {
+                seen.push(item);
+            }
+        } catch (error) {
+            message = (error as Error).message;
+        }
+
+        expect(seen).toEqual([1]);
+        expect(message).toBe("boom");
+    });
+
+    it("take(0) and an away-pointing range are empty", async () => {
+        expect(await chain([1, 2, 3]).take(0).toArray()).toEqual([]);
+        expect([...range(0, 5, -1)]).toEqual([]);
+    });
+
+    it("range: a step of 0 throws a RangeError", () => {
+        expect(() => [...range(0, 5, 0)]).toThrow(RangeError);
+    });
 });

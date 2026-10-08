@@ -41,7 +41,13 @@ export class ConcurrentMap<
         }
         this.#currentTasksRunning++;
         const id = this.#taskId++;
-        this.#options.onTaskStarted?.(id);
+        try {
+            this.#options.onTaskStarted?.(id);
+        } catch (error) {
+            // the task never started: give its slot back
+            this.#currentTasksRunning--;
+            throw error;
+        }
         return id;
     }
 
@@ -53,10 +59,11 @@ export class ConcurrentMap<
         if (this.#currentTasksRunning < this.#options.concurrency) {
             this.#onCapable?.();
         }
-        this.#options.onTaskCompleted?.(id);
         if (this.#currentTasksRunning === 0) {
             this.#onAllTasksCompleted?.();
         }
+        // last, so that a throwing callback cannot keep the loop waiting
+        this.#options.onTaskCompleted?.(id);
     }
 
     #onceCapable() {
@@ -78,39 +85,66 @@ export class ConcurrentMap<
         });
     }
 
-    #process(input: Iter<Input>): AsyncIterable<Output | ErrorOutput> {
-        // const buffer: (Output | ErrorOutput)[] = [];
-
+    async *#process(input: Iter<Input>): AsyncGenerator<Output | ErrorOutput> {
         const fifo = new Fifo<Output | ErrorOutput>();
+        let failure: { error: unknown } | null = null;
 
-        (async () => {
-            for await (const inputItem of input) {
-                // Wait for available concurrency capacity
-                await this.#onceCapable();
-
-                const id = this.#checkOut();
-
-                Promise.resolve()
-                    .then(() => this.#mapper(inputItem))
-                    .catch((error) =>
-                        this.#errorMapper
-                            ? this.#errorMapper(inputItem, error)
-                            : Promise.reject(error),
-                    )
-                    .then((response) => {
-                        return fifo.send(response);
-                    })
-                    .finally(() => {
-                        this.#checkIn(id);
-                    });
+        const fail = (error: unknown) => {
+            if (failure) {
+                return;
             }
+            failure = { error };
+            fifo.end(error);
+        };
 
-            // Wait for remaining tasks
-            await this.#onceAllTasksCompleted();
-            fifo.end();
+        // The reading loop starts here, on the first `next()` of the consumer
+        (async () => {
+            try {
+                for await (const inputItem of input) {
+                    if (failure) {
+                        break;
+                    }
+                    // Wait for available concurrency capacity
+                    await this.#onceCapable();
+                    if (failure) {
+                        break;
+                    }
+
+                    const id = this.#checkOut();
+
+                    Promise.resolve()
+                        .then(() => this.#mapper(inputItem))
+                        .catch((error) =>
+                            this.#errorMapper
+                                ? this.#errorMapper(inputItem, error)
+                                : Promise.reject(error),
+                        )
+                        .then((response) => {
+                            if (!failure) {
+                                return fifo.send(response);
+                            }
+                        })
+                        .catch(fail)
+                        .finally(() => {
+                            try {
+                                this.#checkIn(id);
+                            } catch (error) {
+                                fail(error);
+                            }
+                        });
+                }
+
+                // Wait for remaining tasks
+                await this.#onceAllTasksCompleted();
+                if (!failure) {
+                    fifo.end();
+                }
+            } catch (error) {
+                fail(error);
+            }
         })();
 
-        return fifo;
+        yield* fifo;
     }
 
     constructor(
@@ -140,6 +174,11 @@ export class ConcurrentMap<
  *
  * If `mapper` throws and an `errorMapper` is given, its return value is
  * emitted instead.
+ *
+ * The operator starts working when the iteration starts, not when it is
+ * applied. If the source throws, or `mapper` throws and no `errorMapper` is
+ * given (or `errorMapper` throws), the iteration ends with that error: no new
+ * calls are started and the results of calls still running are discarded.
  *
  * @param options - see `ConcurrentMapOptions`
  * @param mapper - transforms an item; may be asynchronous

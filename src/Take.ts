@@ -5,10 +5,9 @@ import type { OperatorFunction } from "./Operator";
  * Creates an operator that passes through only the first `size` items and then
  * stops iterating the source.
  *
- * `size` must be at least 1; the behavior for 0 and negative sizes is not
- * defined.
+ * A `size` of 0 or less gives an empty iteration and the source is not read.
  *
- * @param size - the number of items to take, at least 1
+ * @param size - the number of items to take
  * @returns an operator function
  *
  * @example
@@ -19,6 +18,9 @@ import type { OperatorFunction } from "./Operator";
  */
 export function take<T>(size: number): OperatorFunction<T, T> {
     return async function* takeOperator(input: Iter<T>): Iter<T> {
+        if (size <= 0) {
+            return;
+        }
         let taken = 0;
         for await (const value of input) {
             yield value;

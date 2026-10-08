@@ -38,23 +38,23 @@ const result = await chain(range(1, 6))
 
 ## Chain methods
 
-| Method                                        | What it does                                                           |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| `chain(iter)`                                 | wraps an iterable in a chain                                           |
-| `.pipe(operator)`                             | applies any operator                                                   |
-| `.map(mapFn, errorMapFn?)`                    | transforms each item                                                   |
-| `.concurrentMap(options, mapFn, errorMapFn?)` | like `map`, with several calls in flight                               |
-| `.filter(typePredicate)`                      | keeps the items that satisfy a type predicate                          |
-| `.take(n)`                                    | keeps the first `n` items                                              |
-| `.skip(n)`                                    | drops the first `n` items                                              |
-| `.batch(sizeOrOptions)`                       | groups items into arrays, by size and/or time                          |
-| `.interval(n)`                                | emits the first and the last item of each group of `n` items           |
-| `.flatten()`                                  | turns an iteration of arrays into an iteration of items                |
-| `.bufferize(options)`                         | accumulates items into a value and emits it when `shouldFlush` says so |
-| `.tap(fn)`                                    | runs a side effect for each item                                       |
-| `.onEnd(fn)`                                  | calls `fn` once after the last item (not on early stop or error)       |
-| `.toArray()`                                  | resolves to an array of all items                                      |
-| `.consume(fn?)`                               | runs the iteration, calling `fn` for each item                         |
+| Method                                        | What it does                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------- |
+| `chain(iter)`                                 | wraps an iterable in a chain                                         |
+| `.pipe(operator)`                             | applies any operator                                                 |
+| `.map(mapFn, errorMapFn?)`                    | transforms each item                                                 |
+| `.concurrentMap(options, mapFn, errorMapFn?)` | like `map`, with several calls in flight                             |
+| `.filter(typePredicate)`                      | keeps the items that satisfy a type predicate                        |
+| `.take(n)`                                    | keeps the first `n` items                                            |
+| `.skip(n)`                                    | drops the first `n` items                                            |
+| `.batch(sizeOrOptions)`                       | groups items into arrays, by size and/or time                        |
+| `.interval(n)`                                | emits the first and the last item of each group of `n` items         |
+| `.flatten()`                                  | turns an iteration of arrays into an iteration of items              |
+| `.bufferize(options)`                         | accumulates items; emits on `shouldFlush`, `timeFrame` or at the end |
+| `.tap(fn)`                                    | runs a side effect for each item                                     |
+| `.onEnd(fn)`                                  | calls `fn` once after the last item (not on early stop or error)     |
+| `.toArray()`                                  | resolves to an array of all items                                    |
+| `.consume(fn?)`                               | runs the iteration, calling `fn` for each item                       |
 
 Diagrams of what the operators do are in [Diagrams.md](./Diagrams.md).
 

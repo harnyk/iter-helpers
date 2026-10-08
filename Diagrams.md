@@ -84,6 +84,8 @@ graph TD
 
 ## Mux
 
+The interleaving below is only an example: the order across inputs is not defined, the order within each input is kept.
+
 ```ts
 chain(
     mux([

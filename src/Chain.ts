@@ -15,7 +15,11 @@ import { take } from "./Take";
 import { tap } from "./Tap";
 import { onEnd } from "./OnEnd";
 
-class Chain<I> implements AsyncIterable<I> {
+/**
+ * A chain of operators over an `Iter`, created with `chain`. Every method that
+ * applies an operator returns a new chain; the chain is an `AsyncIterable`.
+ */
+export class Chain<I> implements AsyncIterable<I> {
     constructor(private source: Iter<I>) {}
 
     async *[Symbol.asyncIterator]() {
@@ -90,6 +94,7 @@ class Chain<I> implements AsyncIterable<I> {
      * Optionally, a `errorMapper` can be provided
      * which allows to handle errors thrown by the `mapper`
      * and return a error value.
+     * @see {@link map}
      */
     map<Output, ErrorOutput = never>(
         mapper: (input: I) => Output | Promise<Output>,
@@ -103,6 +108,7 @@ class Chain<I> implements AsyncIterable<I> {
 
     /**
      * The same as `map`, but allowing to process values in parallel
+     * @see {@link concurrentMap}
      */
     concurrentMap<Output, ErrorOutput = never>(
         options: ConcurrentMapOptions,
@@ -117,6 +123,7 @@ class Chain<I> implements AsyncIterable<I> {
 
     /**
      * Calls a function for each item without changing items in the chain.
+     * @see {@link tap}
      */
     tap(tapper: (input: I) => void | Promise<void>): Chain<I> {
         return this.pipe(tap(tapper));
@@ -128,6 +135,7 @@ class Chain<I> implements AsyncIterable<I> {
      * The resulting chain will be a chain of arrays of the given size maximum.
      * Once the iteration is stopped, the rest of the items will be returned
      * as a batch of possibly smaller size.
+     * @see {@link batch}
      */
     batch(options: number | BatchOptions): Chain<I[]> {
         return this.pipe(batch(options));
@@ -138,6 +146,7 @@ class Chain<I> implements AsyncIterable<I> {
      *
      * Works like `batch`, but instead of returning batches of the given size,
      * it returns pairs of their first and last items.
+     * @see {@link interval}
      */
     interval(size: number): Chain<[I, I]> {
         return this.pipe(interval(size));
@@ -146,6 +155,7 @@ class Chain<I> implements AsyncIterable<I> {
     /**
      * For the chains of arrays, returns a new chain of those arrays' items.
      * For the chains on non-arrays, does not compile.
+     * @see {@link flatten}
      */
     flatten(): I extends unknown[] ? Chain<I[number]> : never {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -159,6 +169,7 @@ class Chain<I> implements AsyncIterable<I> {
      * Unlike the most of chain methods, the `filter`'s
      * predicate must be a synchronous function,
      * because it must return a type predicate.
+     * @see {@link filter}
      */
     filter<Output extends I>(
         predicate: (value: I) => value is Output,
@@ -190,7 +201,8 @@ class Chain<I> implements AsyncIterable<I> {
     }
 
     /**
-     * Accumulates items into a value and emits it on demand.
+     * Accumulates items into a value and emits it when `shouldFlush` returns
+     * `true`, when `timeFrame` elapses, or when the source ends.
      *
      * @see {@link bufferize}
      */
@@ -199,7 +211,10 @@ class Chain<I> implements AsyncIterable<I> {
     }
 
     /**
-     * Called once, when the iteration is done
+     * Called once, when the iteration is done. It is not called if the
+     * consumer stops early or the source throws.
+     *
+     * @see {@link onEnd}
      */
     onEnd(cb: () => void): Chain<I> {
         return this.pipe(onEnd(cb));
@@ -214,6 +229,7 @@ class Chain<I> implements AsyncIterable<I> {
  * `consume()`, or iterate it with `for await`.
  *
  * @param source - any `Iter`: an array, a generator, an async generator, ...
+ * @returns a chain over the source
  *
  * @example
  * ```ts

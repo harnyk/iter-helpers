@@ -44,7 +44,7 @@ export class Fifo<T> implements AsyncIterable<T> {
      * Sends an item to the fifo.
      *
      * Resolves as soon as the item is actually pushed.
-     * If the internal queue is full, blocks until the queue is drained.
+     * If the internal queue is full, waits until a slot is free.
      */
     send(item: T): Promise<void> {
         return this.#ch.send(item);

@@ -24,7 +24,8 @@ export interface BufferizeOptions<T, R> {
 
 /**
  * Creates an operator that accumulates incoming items into a value and emits
- * that value on demand. `batch` and `interval` are built on it.
+ * it when `shouldFlush` returns `true`, when `timeFrame` elapses, or when the
+ * source ends. `batch` and `interval` are built on it.
  *
  * Whatever is left in the accumulator when the source ends is emitted as a
  * last value.

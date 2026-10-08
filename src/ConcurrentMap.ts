@@ -148,6 +148,8 @@ export class ConcurrentMap<
  *
  * @example
  * ```ts
+ * import { setTimeout as sleep } from "node:timers/promises";
+ *
  * const delays = [60, 10, 30];
  * const work = async (ms: number) => {
  *     await sleep(ms);

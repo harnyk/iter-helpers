@@ -38,23 +38,23 @@ const result = await chain(range(1, 6))
 
 ## Chain methods
 
-| Method                                        | What it does                                                 |
-| --------------------------------------------- | ------------------------------------------------------------ |
-| `chain(iter)`                                 | wraps an iterable in a chain                                 |
-| `.pipe(operator)`                             | applies any operator                                         |
-| `.map(mapFn, errorMapFn?)`                    | transforms each item                                         |
-| `.concurrentMap(options, mapFn, errorMapFn?)` | like `map`, with several calls in flight                     |
-| `.filter(typePredicate)`                      | keeps the items that satisfy a type predicate                |
-| `.take(n)`                                    | keeps the first `n` items (`n` at least 1)                   |
-| `.skip(n)`                                    | drops the first `n` items                                    |
-| `.batch(sizeOrOptions)`                       | groups items into arrays, by size and/or time                |
-| `.interval(n)`                                | emits the first and the last item of each group of `n` items |
-| `.flatten()`                                  | turns an iteration of arrays into an iteration of items      |
-| `.bufferize(options)`                         | accumulates items into a value and emits it on demand        |
-| `.tap(fn)`                                    | runs a side effect for each item                             |
-| `.onEnd(fn)`                                  | calls `fn` once after the last item                          |
-| `.toArray()`                                  | resolves to an array of all items                            |
-| `.consume(fn?)`                               | runs the iteration, calling `fn` for each item               |
+| Method                                        | What it does                                                           |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `chain(iter)`                                 | wraps an iterable in a chain                                           |
+| `.pipe(operator)`                             | applies any operator                                                   |
+| `.map(mapFn, errorMapFn?)`                    | transforms each item                                                   |
+| `.concurrentMap(options, mapFn, errorMapFn?)` | like `map`, with several calls in flight                               |
+| `.filter(typePredicate)`                      | keeps the items that satisfy a type predicate                          |
+| `.take(n)`                                    | keeps the first `n` items (`n` at least 1)                             |
+| `.skip(n)`                                    | drops the first `n` items                                              |
+| `.batch(sizeOrOptions)`                       | groups items into arrays, by size and/or time                          |
+| `.interval(n)`                                | emits the first and the last item of each group of `n` items           |
+| `.flatten()`                                  | turns an iteration of arrays into an iteration of items                |
+| `.bufferize(options)`                         | accumulates items into a value and emits it when `shouldFlush` says so |
+| `.tap(fn)`                                    | runs a side effect for each item                                       |
+| `.onEnd(fn)`                                  | calls `fn` once after the last item (not on early stop or error)       |
+| `.toArray()`                                  | resolves to an array of all items                                      |
+| `.consume(fn?)`                               | runs the iteration, calling `fn` for each item                         |
 
 Diagrams of what the operators do are in [Diagrams.md](./Diagrams.md).
 
@@ -119,6 +119,8 @@ await chain(range(0, 5)).batch(2).toArray();
 `batch` also takes `{ size, timeFrame }`. A batch is emitted when it reaches `size` items or `timeFrame` milliseconds after its first item, whichever comes first; the rest at the end of the source is emitted as a smaller batch.
 
 ```ts
+import { setTimeout as sleep } from "node:timers/promises";
+
 async function* slow() {
     yield 1;
     await sleep(150);
@@ -156,6 +158,8 @@ const sums = await chain([1, 2, 3, 4, 5])
 Runs up to `concurrency` calls at the same time. Results are emitted in the order the calls complete, not in the order of the input.
 
 ```ts
+import { setTimeout as sleep } from "node:timers/promises";
+
 const delays = [60, 10, 30];
 const work = async (ms: number) => {
     await sleep(ms);

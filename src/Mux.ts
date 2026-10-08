@@ -39,6 +39,7 @@ export class Mux<
  * defined; the order within each input is kept.
  *
  * @param inputs - the sources to merge
+ * @returns an async iterable of the items of all inputs
  *
  * @example
  * ```ts

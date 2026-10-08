@@ -26,6 +26,8 @@ export type BatchOptions =
  * await chain(range(0, 5)).batch(2).toArray();
  * // => [[0, 1], [2, 3], [4]]
  *
+ * import { setTimeout as sleep } from "node:timers/promises";
+ *
  * async function* slow() {
  *     yield 1;
  *     await sleep(150);

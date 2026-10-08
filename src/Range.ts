@@ -9,6 +9,7 @@
  * @param start - the first number, inclusive; defaults to 0
  * @param end - the end of the range, exclusive; omit for an endless range
  * @param step - the distance between numbers
+ * @returns a generator of numbers
  *
  * @example
  * ```ts

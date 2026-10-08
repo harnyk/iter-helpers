@@ -1,5 +1,6 @@
 export * from "./Batch";
-export * from "./Chain";
+export { chain } from "./Chain";
+export type { Chain } from "./Chain";
 export * from "./ConcurrentMap";
 export * from "./Fifo";
 export * from "./Filter";

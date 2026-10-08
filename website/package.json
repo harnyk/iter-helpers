@@ -6,7 +6,8 @@
         "build": "docusaurus build",
         "serve": "docusaurus serve",
         "clear": "docusaurus clear",
-        "check-snippets": "node scripts/check-snippets.mjs"
+        "check-snippets": "node scripts/check-snippets.mjs",
+        "test-snippets": "node --test \"scripts/*.test.mjs\""
     },
     "engines": {
         "node": ">=22"

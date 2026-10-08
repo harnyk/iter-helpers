@@ -1,3 +1,5 @@
+[![CI](https://github.com/harnyk/iter-helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/harnyk/iter-helpers/actions/workflows/ci.yml)
+
 > Requires Node.js 22 or newer.
 
 # Iter Helpers

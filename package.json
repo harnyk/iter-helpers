@@ -35,7 +35,8 @@
         "format:check": "prettier --check .",
         "test:watch": "vitest",
         "coverage": "vitest run --coverage",
-        "check-package": "publint && attw --pack . && node scripts/smoke.mjs && node scripts/smoke.cjs"
+        "check-package": "publint && attw --pack . && node scripts/smoke.mjs && node scripts/smoke.cjs",
+        "test:scripts": "node --test \"scripts/*.test.mjs\""
     },
     "dependencies": {
         "@harnyk/chan": "^0.1.1"

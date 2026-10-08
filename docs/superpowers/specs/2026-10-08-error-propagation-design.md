@@ -23,7 +23,7 @@ Out of scope: stopping background work when a consumer stops early (not filed, s
 - **Error mechanism (owner chose option A):** implemented in this repository on top of `Fifo`; `@harnyk/chan` is unchanged (it can only `close()` without a reason).
 - **`Fifo.end(error?: unknown)`**: with an `error`, the iteration delivers the items already in the queue and then throws that error (for every reader). A second `end` is ignored, so the first error wins. Without an argument the behavior is unchanged. `send` after `end` still rejects with `chan is closed`.
 - **Error contract of operators:** the first error ends the iteration. The consumer receives the items already emitted, then the error. No new calls start after an error; results of calls already in flight are discarded and never become `unhandledRejection`.
-- **`bufferize`:** items accumulated but not yet emitted are discarded when the source (or the `reducer` / `shouldFlush`) fails. Pending `timeFrame` timers are cancelled. A failure inside the timer flush is routed to the same error path.
+- **`bufferize`:** when the source (or the `reducer` / `shouldFlush`) fails, the items accumulated so far are first emitted as a last, smaller value (if there are any), and then the error is thrown (owner's decision). Pending `timeFrame` timers are cancelled. A failure inside the timer flush is routed to the same error path.
 - **`concurrentMap`:** `process` becomes an async generator that creates the `Fifo` and starts its reading loop on the first `next()` (laziness, #8). A source error, a mapper error without `errorMapper`, or an `errorMapper` that throws ends the iteration with that error.
 - **`mux`:** the first input error ends the iteration. Other inputs stop at their next item (their `send` into the ended fifo rejects, which is swallowed). An input that is blocked in `send` at that moment stays blocked: `chan` does not wake a blocked `send` on `close()`. It holds no CPU and raises no error; documented as a known limitation.
 - **`take(size)`:** `size <= 0` returns at once without touching the source.
@@ -36,7 +36,7 @@ New `src/tests/error-propagation.spec.ts`, built from the reproductions in the i
 
 - a helper records `unhandledRejection` events during a test and asserts there are none;
 - `Fifo`: `end(error)` delivers queued items then throws, for two readers; the first of two `end(error)` calls wins;
-- `bufferize` / `batch` / `interval`: a source error, a throwing `reducer`, and an error with a pending `timeFrame` reject the consumer, with no unhandled rejection and no timer left;
+- `bufferize` / `batch` / `interval`: a source error, a throwing `reducer`, and an error with a pending `timeFrame` deliver the partial value first and then reject the consumer, with no unhandled rejection, no timer left and no emission after the error;
 - `concurrentMap`: a source error; a mapper error without `errorMapper`; an `errorMapper` that throws; an error while other calls are in flight; laziness (no consumption means zero source reads and zero mapper calls); existing ordering and `errorMapper` behavior unchanged;
 - `mux`: one failing input among healthy ones rejects the consumer; no unhandled rejection;
 - `take(0)` and `take(-1)`: empty result and zero source reads (a counting source);
@@ -65,7 +65,7 @@ Branch `fix/errors-laziness-edge-cases`; each commit has its red tests first and
 ## Risks
 
 - **Behavior changes visible to users:** iterations that used to hang or crash the process now reject; `concurrentMap` no longer starts work before consumption; `take(0)` and `range(0, 5, -1)` return empty. All are bug fixes, but they are changes. Called out in the PR description.
-- **Discarding the partial batch on failure** is a choice; the alternative (emit the partial batch, then throw) can be chosen later without changing the error mechanism.
+- **Emitting the partial batch before the error** means the consumer can see a smaller value than the configured size right before a failure; this is documented in the Readme "Errors" section. If `getNextInitialValue` or the flush itself throws during that last emission, the original error still wins.
 - **Races in `concurrentMap`:** error, capacity wake-up and completion callbacks interact. The tests cover failure while other calls are in flight and failure while the loop waits for capacity; the implementation keeps one `failed` flag checked before every start and every send.
 
 ## Success criteria

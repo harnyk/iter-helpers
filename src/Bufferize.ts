@@ -10,7 +10,7 @@ import type { OperatorFunction } from "./Operator";
  * @typeParam R - the type of the accumulated (and emitted) value
  */
 export interface BufferizeOptions<T, R> {
-    /** Creates the empty accumulator at the start and after every flush. */
+    /** Creates the initial accumulator: at the start and, unless `getNextInitialValue` is set, after every flush. */
     getInitialValue: () => R;
     /** Creates the accumulator that follows a flush; defaults to `getInitialValue`. */
     getNextInitialValue?: (acc: R) => R;

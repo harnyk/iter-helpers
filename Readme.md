@@ -28,7 +28,7 @@ const result = await chain(range(1, 6))
 // => [4, 6, 8]
 ```
 
-`chain()` accepts anything you can iterate with `for await`: an array, a generator or an async generator. Every method of the chain applies an operator and returns a new chain. A chain does nothing until you consume it with `toArray()`, `consume()` or `for await`.
+`chain()` accepts anything you can iterate with `for await`: an array, a generator or an async generator. Every method of the chain applies an operator and returns a new chain. Chains are lazy: nothing is read from the source until you consume the chain with `toArray()`, `consume()` or `for await`. The one exception is `concurrentMap`, which starts reading and calling the mapper as soon as it is added ([#8](https://github.com/harnyk/iter-helpers/issues/8)).
 
 ## Concepts
 
@@ -255,7 +255,14 @@ await consumed; // => [1, 2]
 
 ## Known issues
 
-Errors thrown by the source of `batch`, `interval`, `bufferize`, `mux` and `concurrentMap` are currently not delivered to the consumer: the consumer waits forever and the error shows up as an `unhandledRejection`. See [#2](https://github.com/harnyk/iter-helpers/issues/2), [#4](https://github.com/harnyk/iter-helpers/issues/4) and [#5](https://github.com/harnyk/iter-helpers/issues/5). Also open: `concurrentMap` drops an item whose mapper throws when there is no error mapper ([#3](https://github.com/harnyk/iter-helpers/issues/3)), `take(0)` yields one item ([#6](https://github.com/harnyk/iter-helpers/issues/6)), and `range` with a step that points away from the end never ends ([#7](https://github.com/harnyk/iter-helpers/issues/7)).
+Errors thrown by the source of `batch`, `interval`, `bufferize`, `mux` and `concurrentMap` are currently not delivered to the consumer: the consumer never finishes, and the error becomes an `unhandledRejection`, which terminates the process under Node's default settings. See [#2](https://github.com/harnyk/iter-helpers/issues/2), [#4](https://github.com/harnyk/iter-helpers/issues/4) and [#5](https://github.com/harnyk/iter-helpers/issues/5).
+
+Also open:
+
+- `concurrentMap` drops an item whose mapper throws when there is no error mapper, and the error becomes an `unhandledRejection` ([#3](https://github.com/harnyk/iter-helpers/issues/3)).
+- `concurrentMap` is not lazy ([#8](https://github.com/harnyk/iter-helpers/issues/8)).
+- `take(0)` yields one item ([#6](https://github.com/harnyk/iter-helpers/issues/6)).
+- `range` with a step that points away from the end never ends ([#7](https://github.com/harnyk/iter-helpers/issues/7)).
 
 ## Migrating from 0.x
 

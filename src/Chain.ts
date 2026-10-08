@@ -29,7 +29,7 @@ class Chain<I> implements AsyncIterable<I> {
      * another `Iter`.
      *
      * Also, for convenience, an operator can be an object with a `process` method,
-     * which is and operator function itself.
+     * which is an operator function itself.
      */
     pipe<O>(op: Operator<I, O>) {
         if (typeof op === "function") {
@@ -111,7 +111,7 @@ class Chain<I> implements AsyncIterable<I> {
     }
 
     /**
-     * Caclulates the intervals of the items.
+     * Calculates the intervals of the items.
      *
      * Works like `batch`, but instead of returning batches of the given size,
      * it returns pairs of their first and last items.

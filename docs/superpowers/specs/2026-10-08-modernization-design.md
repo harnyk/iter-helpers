@@ -26,7 +26,7 @@ Out of scope (separate later work):
 | Build | tsup, ESM + CJS + `.d.ts` |
 | Lint / format | ESLint flat config + typescript-eslint; prettier owns formatting |
 | CI/CD | GitHub Actions; npm trusted publishing (OIDC) with provenance |
-| Deprecated API | `Fifo.push` and `Fifo.waitDrain` are removed |
+| Deprecated API | `Fifo.push` and `Fifo.waitDrain` are removed (`send()` after `end()` rejects with `chan is closed`; the old `push()` threw the same error) |
 
 ## 1. Package and build
 
@@ -68,6 +68,7 @@ Other:
 ### Manual steps outside the repository (owner)
 
 1. First publish of `@harnyk/iter-helpers@1.0.0-rc.0` manually, if npm cannot attach a trusted publisher to a not-yet-existing package.
+   Note: npm assigns `latest` to the very first published version of a package even when `--tag rc` is given, so `1.0.0-rc.0` will also be `latest` until a stable version is published. Accepted for the RC period.
 2. On npmjs.com: add a Trusted Publisher (fork repository, `release.yml`, environment `npm-publish`).
 3. On GitHub: create Environment `npm-publish` with a required reviewer.
 

@@ -58,4 +58,4 @@ const result = await chain(range(1, 6))
 | `.toArray()`                                  | resolves to an array of all items                                    |
 | `.consume(fn?)`                               | runs the iteration, calling `fn` for each item                       |
 
-Every function and type is described in the [API reference](./api/index.md).
+Pictures of what the operators do are on the [Diagrams](./diagrams.md) page, and every function and type is described in the [API reference](./api/index.md).

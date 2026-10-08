@@ -28,7 +28,7 @@ const result = await chain(range(1, 6))
 // => [4, 6, 8]
 ```
 
-`chain()` accepts anything you can iterate with `for await`: an array, a generator or an async generator. Every method of the chain applies an operator and returns a new chain. Chains are lazy: nothing is read from the source until you consume the chain with `toArray()`, `consume()` or `for await`. The one exception is `concurrentMap`, which starts reading and calling the mapper as soon as it is added ([#8](https://github.com/harnyk/iter-helpers/issues/8)).
+`chain()` accepts anything you can iterate with `for await`: an array, a generator or an async generator. Every method of the chain applies an operator and returns a new chain. Chains are lazy: nothing is read from the source until you consume the chain with `toArray()`, `consume()` or `for await`.
 
 ## Concepts
 
@@ -45,7 +45,7 @@ const result = await chain(range(1, 6))
 | `.map(mapFn, errorMapFn?)`                    | transforms each item                                                   |
 | `.concurrentMap(options, mapFn, errorMapFn?)` | like `map`, with several calls in flight                               |
 | `.filter(typePredicate)`                      | keeps the items that satisfy a type predicate                          |
-| `.take(n)`                                    | keeps the first `n` items (`n` at least 1)                             |
+| `.take(n)`                                    | keeps the first `n` items                                              |
 | `.skip(n)`                                    | drops the first `n` items                                              |
 | `.batch(sizeOrOptions)`                       | groups items into arrays, by size and/or time                          |
 | `.interval(n)`                                | emits the first and the last item of each group of `n` items           |
@@ -98,7 +98,7 @@ await chain([1, 2, 3, 4, 5]).take(2).toArray(); // => [1, 2]
 await chain([1, 2, 3, 4, 5]).skip(2).toArray(); // => [3, 4, 5]
 ```
 
-`take` needs a size of at least 1.
+A size of 0 or less gives an empty iteration.
 
 ### flatten
 
@@ -218,7 +218,7 @@ await chain([1, 2]).pipe({ process: double }).toArray(); // => [2, 4]
 await chain(range(1)).take(3).toArray(); // => [1, 2, 3]
 ```
 
-Without an end the range is endless. An explicit step must point toward the end and must not be 0.
+Without an end the range is endless. A step that points away from the end gives an empty range, and a step of 0 throws a `RangeError`.
 
 ### mux
 
@@ -257,16 +257,34 @@ fifo.end();
 await consumed; // => [1, 2]
 ```
 
-## Known issues
+`end(error)` finishes the queue with an error: consumers get the items already queued, then the error is thrown from their iteration.
 
-Errors thrown by the source of `batch`, `interval`, `bufferize`, `mux` and `concurrentMap` are currently not delivered to the consumer: the consumer never finishes, and the error becomes an `unhandledRejection`, which terminates the process under Node's default settings. See [#2](https://github.com/harnyk/iter-helpers/issues/2), [#4](https://github.com/harnyk/iter-helpers/issues/4) and [#5](https://github.com/harnyk/iter-helpers/issues/5).
+## Errors
 
-Also open:
+The first error ends the iteration: the consumer receives the items that were already emitted, then the error is thrown from `for await` or `toArray()`.
 
-- `concurrentMap` drops an item whose mapper throws when there is no error mapper, and the error becomes an `unhandledRejection` ([#3](https://github.com/harnyk/iter-helpers/issues/3)).
-- `concurrentMap` is not lazy ([#8](https://github.com/harnyk/iter-helpers/issues/8)).
-- `take(0)` yields one item ([#6](https://github.com/harnyk/iter-helpers/issues/6)).
-- `range` with a step that points away from the end never ends ([#7](https://github.com/harnyk/iter-helpers/issues/7)).
+```ts
+async function* failing() {
+    yield 1;
+    yield 2;
+    throw new Error("source failed");
+}
+
+try {
+    for await (const batch of chain(failing()).batch(5)) {
+        console.log(batch);
+    }
+} catch (error) {
+    console.log((error as Error).message);
+}
+// [ 1, 2 ]
+// source failed
+```
+
+- `map`: an error thrown by the mapper is rethrown unless an error mapper turns it into a value.
+- `batch`, `interval`, `bufferize`: the items accumulated at the moment of the failure are emitted first, as a last, smaller value.
+- `concurrentMap`: after an error no new calls start, and the results of calls that are still running are discarded. Like `map`, it rethrows a mapper error unless an error mapper is given.
+- `mux`: the first failing input ends the iteration; the other inputs stop at their next item. An input that is blocked while sending at that moment stays blocked (it holds no CPU and raises no error).
 
 ## Migrating from 0.x
 
@@ -274,6 +292,9 @@ Also open:
 - `Fifo.push()` and `Fifo.waitDrain()` are removed. Use `await fifo.send(item)`.
 - The package name is `@harnyk/iter-helpers` (it was `@sweepbright/iter-helpers`).
 - The package is ESM-first and also ships a CommonJS build.
+- Errors thrown by sources and mappers now reach the consumer in `batch`, `interval`, `bufferize`, `concurrentMap` and `mux` (before, the consumer could hang and the process could crash with an `unhandledRejection`).
+- `concurrentMap` starts working when it is consumed, not when it is applied.
+- `take(0)` and `take(-1)` are empty; `range` with a step pointing away from the end is empty, with a step of 0 it throws a `RangeError`.
 
 ## License
 

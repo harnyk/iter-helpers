@@ -164,6 +164,11 @@ export class ConcurrentMap<
  * If `mapper` throws and an `errorMapper` is given, its return value is
  * emitted instead.
  *
+ * The operator starts working when the iteration starts, not when it is
+ * applied. If the source throws, or `mapper` throws and no `errorMapper` is
+ * given (or `errorMapper` throws), the iteration ends with that error: no new
+ * calls are started and the results of calls still running are discarded.
+ *
  * @param options - see `ConcurrentMapOptions`
  * @param mapper - transforms an item; may be asynchronous
  * @param errorMapper - turns an error thrown by `mapper` into a value

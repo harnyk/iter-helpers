@@ -28,7 +28,9 @@ export interface BufferizeOptions<T, R> {
  * source ends. `batch` and `interval` are built on it.
  *
  * Whatever is left in the accumulator when the source ends is emitted as a
- * last value.
+ * last value. If the source, the `reducer` or `shouldFlush` throws, the items
+ * accumulated so far are emitted first as a last, smaller value, and then the
+ * error is thrown to the consumer.
  *
  * @param options - see `BufferizeOptions`
  * @returns an operator function

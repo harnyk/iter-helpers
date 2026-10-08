@@ -52,6 +52,9 @@ export class Mux<
  * Items are emitted as they arrive, so the order across inputs is not
  * defined; the order within each input is kept.
  *
+ * If an input throws, the iteration ends with that error and the other inputs
+ * stop at their next item.
+ *
  * @param inputs - the sources to merge
  * @returns an async iterable of the items of all inputs
  *

@@ -13,6 +13,8 @@ export interface FifoOptions {
  *
  * Producers call `send` (which waits when the queue is full, giving back
  * pressure) and finish with `end`; consumers iterate the fifo with `for await`.
+ * `end(error)` finishes the queue with an error that the consumers receive
+ * after the queued items.
  *
  * @example
  * ```ts

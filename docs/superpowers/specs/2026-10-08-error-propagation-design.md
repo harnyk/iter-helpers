@@ -21,18 +21,19 @@ Out of scope: stopping background work when a consumer stops early (not filed, s
 ## Decisions
 
 - **Error mechanism (owner chose option A):** implemented in this repository on top of `Fifo`; `@harnyk/chan` is unchanged (it can only `close()` without a reason).
-- **`Fifo.end(error?: unknown)`**: with an `error`, the iteration delivers the items already in the queue and then throws that error (for every reader). A second `end` is ignored, so the first error wins. Without an argument the behavior is unchanged. `send` after `end` still rejects with `chan is closed`.
+- **`Fifo.end(error?: unknown)`** (an explicitly passed `undefined` also counts as an error): with an `error`, the iteration delivers the items already in the queue and then throws that error (for every reader). A second `end` is ignored, so the first error wins. Without an argument the behavior is unchanged. `send` after `end` still rejects with `chan is closed`.
 - **Error contract of operators:** the first error ends the iteration. The consumer receives the items already emitted, then the error. No new calls start after an error; results of calls already in flight are discarded and never become `unhandledRejection`.
 - **`bufferize`:** when the source (or the `reducer` / `shouldFlush`) fails, the items accumulated so far are first emitted as a last, smaller value (if there are any), and then the error is thrown (owner's decision). Pending `timeFrame` timers are cancelled. A failure inside the timer flush is routed to the same error path.
+- **Callbacks of `concurrentMap`:** an error thrown by `onTaskStarted` (the slot is given back) or by `onTaskCompleted` (called last, after the waiting loop was woken) ends the iteration with that error like any other failure.
 - **`concurrentMap`:** `process` becomes an async generator that creates the `Fifo` and starts its reading loop on the first `next()` (laziness, #8). A source error, a mapper error without `errorMapper`, or an `errorMapper` that throws ends the iteration with that error.
-- **`mux`:** the first input error ends the iteration. Other inputs stop at their next item (their `send` into the ended fifo rejects, which is swallowed). An input that is blocked in `send` at that moment stays blocked: `chan` does not wake a blocked `send` on `close()`. It holds no CPU and raises no error; documented as a known limitation.
+- **`mux`:** the first input error ends the iteration. Other inputs stop at their next item (their `send` into the ended fifo rejects, which is swallowed). An input that is blocked in `send` at that moment may stay blocked: `chan` does not wake a blocked `send` on `close()`. It holds no CPU and raises no error; documented as a known limitation.
 - **`take(size)`:** `size <= 0` returns at once without touching the source.
 - **`range`** follows Python: `end` given and the step points away from it gives an empty range; `step === 0` throws `RangeError("range: step must not be 0")` on the first `next()` (the function stays a generator); no `end` stays endless.
 - **Release:** not part of the PR. The owner bumps with `pnpm version prerelease --preid=rc` after merge.
 
 ## Tests (red first)
 
-New `src/tests/error-propagation.spec.ts`, built from the reproductions in the issues, plus additions to the existing specs:
+New specs per area (`fifo-error`, `bufferize-errors`, `concurrentMap-errors`, `mux-errors`, with a shared helper `src/tests/unhandled.ts`), built from the reproductions in the issues, plus additions to `take.spec.ts`, `range.spec.ts` and `docs-examples.spec.ts`:
 
 - a helper records `unhandledRejection` events during a test and asserts there are none;
 - `Fifo`: `end(error)` delivers queued items then throws, for two readers; the first of two `end(error)` calls wins;

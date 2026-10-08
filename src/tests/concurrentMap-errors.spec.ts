@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chain } from "../main";
+import { chain, concurrentMap } from "../main";
 import { sleep } from "./sleep";
 import { collect, trackUnhandled, withTimeout } from "./unhandled";
 
@@ -174,5 +174,57 @@ describe("concurrentMap - errors and laziness", () => {
         expect(result.error).toEqual(new Error("boom"));
         expect(calls.length).toBeLessThan(5);
         expect(unhandled).toEqual([]);
+    });
+
+    describe("throwing callbacks", () => {
+        it("onTaskStarted that throws reaches the consumer and does not leak a pool slot", async () => {
+            let failNextStart = true;
+            const operator = concurrentMap(
+                {
+                    concurrency: 1,
+                    onTaskStarted: () => {
+                        if (failNextStart) {
+                            failNextStart = false;
+                            throw new Error("started failed");
+                        }
+                    },
+                },
+                async (n: number) => n,
+            );
+
+            const first = await trackUnhandled(() =>
+                withTimeout(collect(chain([1, 2]).pipe(operator))),
+            );
+            expect(first.result.error).toEqual(new Error("started failed"));
+            expect(first.unhandled).toEqual([]);
+
+            // the same operator object must still work: no slot was leaked
+            const second = await withTimeout(
+                collect(chain([1, 2]).pipe(operator)),
+            );
+            expect(second.error).toBeUndefined();
+            expect(second.items).toEqual([1, 2]);
+        });
+
+        it("onTaskCompleted that throws reaches the consumer without hanging or leaking a rejection", async () => {
+            const { result, unhandled } = await trackUnhandled(() =>
+                withTimeout(
+                    collect(
+                        chain([1, 2, 3]).concurrentMap(
+                            {
+                                concurrency: 1,
+                                onTaskCompleted: () => {
+                                    throw new Error("completed failed");
+                                },
+                            },
+                            async (n) => n,
+                        ),
+                    ),
+                ),
+            );
+
+            expect(result.error).toEqual(new Error("completed failed"));
+            expect(unhandled).toEqual([]);
+        });
     });
 });

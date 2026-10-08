@@ -41,7 +41,13 @@ export class ConcurrentMap<
         }
         this.#currentTasksRunning++;
         const id = this.#taskId++;
-        this.#options.onTaskStarted?.(id);
+        try {
+            this.#options.onTaskStarted?.(id);
+        } catch (error) {
+            // the task never started: give its slot back
+            this.#currentTasksRunning--;
+            throw error;
+        }
         return id;
     }
 
@@ -53,10 +59,11 @@ export class ConcurrentMap<
         if (this.#currentTasksRunning < this.#options.concurrency) {
             this.#onCapable?.();
         }
-        this.#options.onTaskCompleted?.(id);
         if (this.#currentTasksRunning === 0) {
             this.#onAllTasksCompleted?.();
         }
+        // last, so that a throwing callback cannot keep the loop waiting
+        this.#options.onTaskCompleted?.(id);
     }
 
     #onceCapable() {
@@ -119,7 +126,11 @@ export class ConcurrentMap<
                         })
                         .catch(fail)
                         .finally(() => {
-                            this.#checkIn(id);
+                            try {
+                                this.#checkIn(id);
+                            } catch (error) {
+                                fail(error);
+                            }
                         });
                 }
 

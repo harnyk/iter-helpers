@@ -88,7 +88,7 @@ export class ConcurrentMap<
                             : Promise.reject(error),
                     )
                     .then((response) => {
-                        fifo.push(response);
+                        return fifo.send(response);
                     })
                     .finally(() => {
                         this.#checkIn(id);

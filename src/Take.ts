@@ -19,6 +19,9 @@ import type { OperatorFunction } from "./Operator";
  */
 export function take<T>(size: number): OperatorFunction<T, T> {
     return async function* takeOperator(input: Iter<T>): Iter<T> {
+        if (size <= 0) {
+            return;
+        }
         let taken = 0;
         for await (const value of input) {
             yield value;

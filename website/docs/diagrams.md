@@ -1,3 +1,7 @@
+# Diagrams
+
+Pictures of what the operators do. Each diagram shows the items entering an operator and the items leaving it.
+
 ## Filter
 
 ```ts

@@ -70,8 +70,10 @@ export function bufferize<T, R>({
 
         function scheduleTimeframedFlush() {
             if (timeFrame && !timeout) {
-                timeout = setTimeout(async () => {
-                    await flushAcc();
+                timeout = setTimeout(() => {
+                    flushAcc().catch((error) => {
+                        outputQueue.end(error);
+                    });
                 }, timeFrame);
             }
         }
@@ -100,7 +102,19 @@ export function bufferize<T, R>({
             outputQueue.end();
         }
 
-        readInput();
+        readInput().catch(async (error) => {
+            cancelTimeframedFlush();
+            try {
+                // what was accumulated before the failure is not lost
+                if (count > 0) {
+                    await flushAcc();
+                }
+            } catch {
+                // the queue is closed or the next accumulator could not be
+                // created: the original error is the one to report
+            }
+            outputQueue.end(error);
+        });
 
         yield* outputQueue;
     };

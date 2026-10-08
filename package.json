@@ -1,6 +1,6 @@
 {
     "name": "@harnyk/iter-helpers",
-    "version": "1.0.0-rc.2",
+    "version": "1.0.0",
     "description": "Convenient helpers for working with sync and async iterators",
     "repository": {
         "type": "git",

@@ -1,102 +1,102 @@
 version: 2.1
 
 executors:
-  node:
-    docker:
-      - image: cimg/node:16.15.0
+    node:
+        docker:
+            - image: cimg/node:16.15.0
 
 x-definitions:
-  - &filters-only-tags
-    branches:
-      ignore: /.*/
-    tags:
-      only: /^v.*/
-  - &filters-any
-    branches:
-      only: /.*/
-    tags:
-      only: /^v.*/
+    - &filters-only-tags
+      branches:
+          ignore: /.*/
+      tags:
+          only: /^v.*/
+    - &filters-any
+      branches:
+          only: /.*/
+      tags:
+          only: /^v.*/
 
 jobs:
-  build:
-    executor: node
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - yarn-v1-{{ checksum "yarn.lock" }}
-            - yarn-v1-
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-      - run: yarn install
-      - save_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}
-          paths:
-            - node_modules
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - .
-      - run: yarn build
+    build:
+        executor: node
+        steps:
+            - checkout
+            - restore_cache:
+                  keys:
+                      - yarn-v1-{{ checksum "yarn.lock" }}
+                      - yarn-v1-
+            - run:
+                  name: Authenticate with registry
+                  command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+            - run: yarn install
+            - save_cache:
+                  key: yarn-v1-{{ checksum "yarn.lock" }}
+                  paths:
+                      - node_modules
+            - persist_to_workspace:
+                  root: ~/project
+                  paths:
+                      - .
+            - run: yarn build
 
-  lint:
-    executor: node
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run: yarn lint
+    lint:
+        executor: node
+        steps:
+            - attach_workspace:
+                  at: ~/project
+            - run: yarn lint
 
-  test:
-    executor: node
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run: yarn test
+    test:
+        executor: node
+        steps:
+            - attach_workspace:
+                  at: ~/project
+            - run: yarn test
 
-  deploy:
-    executor: node
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-      - run:
-          name: Build
-          command: yarn build
-      - run:
-          name: Publish package
-          command: |
-            if [[ -n "$CIRCLE_TAG" ]] && [[ "$CIRCLE_TAG" == *"pre"* ]]; then
-              yarn publish --tag pre-release
-            else
-              yarn publish
-            fi
+    deploy:
+        executor: node
+        steps:
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Authenticate with registry
+                  command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+            - run:
+                  name: Build
+                  command: yarn build
+            - run:
+                  name: Publish package
+                  command: |
+                      if [[ -n "$CIRCLE_TAG" ]] && [[ "$CIRCLE_TAG" == *"pre"* ]]; then
+                        yarn publish --tag pre-release
+                      else
+                        yarn publish
+                      fi
 
 workflows:
-  test-deploy:
-    jobs:
-      - build:
-          context: npm-context
-          filters: *filters-any
-      - lint:
-          context: npm-context
-          filters: *filters-any
-          requires:
-            - build
-      - test:
-          context: npm-context
-          filters: *filters-any
-          requires:
-            - lint
-      - approve:
-          name: approve
-          type: approval
-          filters: *filters-only-tags
-      - deploy:
-          context: npm-publish
-          requires:
-            - test
-            - approve
-          filters: *filters-only-tags
+    test-deploy:
+        jobs:
+            - build:
+                  context: npm-context
+                  filters: *filters-any
+            - lint:
+                  context: npm-context
+                  filters: *filters-any
+                  requires:
+                      - build
+            - test:
+                  context: npm-context
+                  filters: *filters-any
+                  requires:
+                      - lint
+            - approve:
+                  name: approve
+                  type: approval
+                  filters: *filters-only-tags
+            - deploy:
+                  context: npm-publish
+                  requires:
+                      - test
+                      - approve
+                  filters: *filters-only-tags

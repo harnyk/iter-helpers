@@ -5,9 +5,10 @@ import { Iter } from "./Iter";
 
 type Iteratee<T> = T extends Iter<infer U> ? U : never;
 
-export class Mux<T extends Iter<unknown>, E extends Iteratee<T> = Iteratee<T>>
-    implements AsyncIterable<E>
-{
+export class Mux<
+    T extends Iter<unknown>,
+    E extends Iteratee<T> = Iteratee<T>,
+> implements AsyncIterable<E> {
     constructor(private inputs: T[]) {}
 
     [Symbol.asyncIterator](): AsyncIterator<E> {

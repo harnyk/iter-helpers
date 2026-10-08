@@ -9,9 +9,11 @@ export interface ConcurrentMapOptions {
     onTaskCompleted?: (taskId: number) => void;
 }
 
-export class ConcurrentMap<Input, Output, ErrorOutput = never>
-    implements OperatorObject<Input, Output | ErrorOutput>
-{
+export class ConcurrentMap<
+    Input,
+    Output,
+    ErrorOutput = never,
+> implements OperatorObject<Input, Output | ErrorOutput> {
     #currentTasksRunning = 0;
     #onCapable: (() => void) | null = null;
     #onAllTasksCompleted: (() => void) | null = null;

@@ -1,9 +1,10 @@
+import { describe, it, expect } from "vitest";
 import { chain } from "../Chain";
 import { Fifo } from "../Fifo";
 import { range } from "../Range";
 import { sleep } from "./sleep";
 
-describe("fifo - actual API", () => {
+describe("fifo", () => {
     it("creates an async iterator to which you can push items externally", async () => {
         const f = new Fifo<number>();
 
@@ -173,5 +174,12 @@ describe("fifo - actual API", () => {
             .flat()
             .sort((a, b) => a - b);
         expect(normalizedReadersResult).toEqual(writerResult);
+    });
+
+    it("rejects send() after end()", async () => {
+        const f = new Fifo<number>();
+        f.end();
+
+        await expect(f.send(1)).rejects.toThrow("chan is closed");
     });
 });

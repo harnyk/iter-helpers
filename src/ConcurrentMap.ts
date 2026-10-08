@@ -1,7 +1,6 @@
-/* eslint-disable indent */
 import { Fifo } from "./Fifo";
-import { Iter } from "./Iter";
-import { OperatorObject } from "./Operator";
+import type { Iter } from "./Iter";
+import type { OperatorObject } from "./Operator";
 
 export interface ConcurrentMapOptions {
     concurrency: number;
@@ -9,9 +8,11 @@ export interface ConcurrentMapOptions {
     onTaskCompleted?: (taskId: number) => void;
 }
 
-export class ConcurrentMap<Input, Output, ErrorOutput = never>
-    implements OperatorObject<Input, Output | ErrorOutput>
-{
+export class ConcurrentMap<
+    Input,
+    Output,
+    ErrorOutput = never,
+> implements OperatorObject<Input, Output | ErrorOutput> {
     #currentTasksRunning = 0;
     #onCapable: (() => void) | null = null;
     #onAllTasksCompleted: (() => void) | null = null;
@@ -87,7 +88,7 @@ export class ConcurrentMap<Input, Output, ErrorOutput = never>
                             : Promise.reject(error),
                     )
                     .then((response) => {
-                        fifo.push(response);
+                        return fifo.send(response);
                     })
                     .finally(() => {
                         this.#checkIn(id);

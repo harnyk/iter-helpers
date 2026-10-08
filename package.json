@@ -1,49 +1,79 @@
 {
-  "name": "@sweepbright/iter-helpers",
-  "version": "0.6.0",
-  "description": "",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sweepbright/iter-helpers"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Mark Harnyk",
-    "email": "markh@sweepbright.com"
-  },
-  "contributors": [
-    {
-      "name": "Mark Harnyk",
-      "email": "markharnyk@gmail.com"
+    "name": "@harnyk/iter-helpers",
+    "version": "1.0.0-rc.0",
+    "description": "Convenient helpers for working with sync and async iterators",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/harnyk/iter-helpers.git"
     },
-    {
-      "name": "Sweepbright Technical Team",
-      "email": "technical@sweepbright.com"
+    "license": "MIT",
+    "author": {
+        "name": "Mark Harnyk",
+        "email": "markharnyk@gmail.com"
+    },
+    "contributors": [
+        {
+            "name": "Mark Harnyk",
+            "email": "markharnyk@gmail.com"
+        },
+        {
+            "name": "Sweepbright Technical Team",
+            "email": "technical@sweepbright.com"
+        }
+    ],
+    "main": "./dist/main.cjs",
+    "types": "./dist/main.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "check-types": "tsc --noEmit",
+        "lint": "eslint .",
+        "test": "vitest run",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test:watch": "vitest",
+        "coverage": "vitest run --coverage",
+        "check-package": "publint && attw --pack . && node scripts/smoke.mjs && node scripts/smoke.cjs",
+        "test:scripts": "node --test \"scripts/*.test.mjs\""
+    },
+    "dependencies": {
+        "@harnyk/chan": "^0.1.1"
+    },
+    "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.5",
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^22.20.5",
+        "@vitest/coverage-v8": "^5.0.3",
+        "eslint": "^10.12.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.13.0",
+        "prettier": "3.9.9",
+        "publint": "^0.3.25",
+        "tsup": "^8.5.1",
+        "tsx": "^4.23.15",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.71.1",
+        "vitest": "^5.0.3"
+    },
+    "packageManager": "pnpm@10.28.0",
+    "type": "module",
+    "module": "./dist/main.js",
+    "engines": {
+        "node": ">=22"
+    },
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/main.d.ts",
+                "default": "./dist/main.js"
+            },
+            "require": {
+                "types": "./dist/main.d.cts",
+                "default": "./dist/main.cjs"
+            }
+        }
     }
-  ],
-  "main": "lib/main.js",
-  "types": "lib/main.d.ts",
-  "files": [
-    "lib"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint --ext .ts ./src",
-    "test": "jest"
-  },
-  "dependencies": {
-    "@harnyk/chan": "^0.1.1"
-  },
-  "devDependencies": {
-    "@types/jest": "^28.1.6",
-    "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
-    "eslint": "^8.52.0",
-    "jest": "^28.1.3",
-    "prettier": "3.0.3",
-    "ts-jest": "^28.0.7",
-    "tsx": "^3.12.10",
-    "typescript": ">=4.7"
-  }
 }

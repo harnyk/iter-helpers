@@ -1,5 +1,5 @@
-import { Iter } from "./Iter";
-import { OperatorFunction } from "./Operator";
+import type { Iter } from "./Iter";
+import type { OperatorFunction } from "./Operator";
 
 export function map<Input, Output, ErrorOutput = never>(
     mapper: (input: Input) => Output | Promise<Output>,

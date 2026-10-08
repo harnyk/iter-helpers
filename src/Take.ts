@@ -1,5 +1,5 @@
-import { Iter } from "./Iter";
-import { OperatorFunction } from "./Operator";
+import type { Iter } from "./Iter";
+import type { OperatorFunction } from "./Operator";
 
 export function take<T>(size: number): OperatorFunction<T, T> {
     return async function* takeOperator(input: Iter<T>): Iter<T> {

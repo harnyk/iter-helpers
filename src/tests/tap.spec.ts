@@ -1,9 +1,10 @@
+import { describe, it, expect, vi } from "vitest";
 import { chain } from "../Chain";
 
 describe("chain.tap", () => {
     it("calls a function for each item without changing items in the chain", async () => {
-        const tapper = jest.fn();
-        const tapper2 = jest.fn();
+        const tapper = vi.fn();
+        const tapper2 = vi.fn();
 
         await chain([1, 2, 3]).tap(tapper).tap(tapper2).consume();
 

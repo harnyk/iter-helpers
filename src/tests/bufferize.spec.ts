@@ -1,4 +1,4 @@
-/* eslint-disable indent */
+import { describe, it, expect } from "vitest";
 import { chain } from "../Chain";
 import { range } from "../Range";
 import { sleep } from "./sleep";

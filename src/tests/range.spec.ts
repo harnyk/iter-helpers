@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { chain } from "../Chain";
 import { range } from "../Range";
 
@@ -17,9 +18,11 @@ describe("range", () => {
 
         // Infinite descending range with explicit step.
         // (take() is used to limit the number of items)
-        expect(await chain(range(0, undefined, -1)).take(5).toArray()).toEqual([
-            0, -1, -2, -3, -4,
-        ]);
+        expect(
+            await chain(range(0, undefined, -1))
+                .take(5)
+                .toArray(),
+        ).toEqual([0, -1, -2, -3, -4]);
 
         // Finite ascending range with explicit step.
         expect(await chain(range(0, 2, 0.5)).toArray()).toEqual([

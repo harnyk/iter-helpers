@@ -1,5 +1,5 @@
 import { bufferize } from "./Bufferize";
-import { OperatorFunction } from "./Operator";
+import type { OperatorFunction } from "./Operator";
 
 export type BatchOptions =
     | { size: number }

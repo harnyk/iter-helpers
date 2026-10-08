@@ -1,5 +1,7 @@
+import { describe, it, expect } from "vitest";
 import { chain } from "../Chain";
 import { Fifo } from "../Fifo";
+import { range } from "../Range";
 
 const sleep = (ms: number) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,7 +83,7 @@ describe("chain.concurrentMap", () => {
         const fifo = new Fifo<number>();
 
         for (const item of input) {
-            fifo.push(item);
+            await fifo.send(item);
         }
 
         let counter = 0;
@@ -99,5 +101,20 @@ describe("chain.concurrentMap", () => {
             .toArray();
 
         expect(result).toHaveLength(input.length);
+    });
+
+    it("does not leak unhandled rejections when the consumer stops early", async () => {
+        const result = await chain(range(0, 20))
+            .concurrentMap({ concurrency: 4 }, async (a) => {
+                await sleep(5);
+                return a;
+            })
+            .take(2)
+            .toArray();
+
+        expect(result).toHaveLength(2);
+
+        // let the remaining in-flight tasks settle: vitest fails the run on any unhandled rejection
+        await sleep(100);
     });
 });

@@ -1,10 +1,11 @@
+import { describe, it, expect, vi } from "vitest";
 import { chain } from "../Chain";
 import { range } from "../Range";
 
 describe("chain.teardown", () => {
     it("calls a function on teardown", async () => {
-        const onTap = jest.fn();
-        const onEnd = jest.fn();
+        const onTap = vi.fn();
+        const onEnd = vi.fn();
 
         const result = await chain(range(0, 10))
             .tap(onTap)

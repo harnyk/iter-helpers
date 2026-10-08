@@ -1,4 +1,4 @@
-import { Iter } from "./Iter";
+import type { Iter } from "./Iter";
 
 export type OperatorFunction<I, O> = (source: Iter<I>) => Iter<O>;
 export type OperatorObject<I, O> = {

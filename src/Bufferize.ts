@@ -1,6 +1,6 @@
 import { Fifo } from "./Fifo";
-import { Iter } from "./Iter";
-import { OperatorFunction } from "./Operator";
+import type { Iter } from "./Iter";
+import type { OperatorFunction } from "./Operator";
 
 export interface BufferizeOptions<T, R> {
     getInitialValue: () => R;

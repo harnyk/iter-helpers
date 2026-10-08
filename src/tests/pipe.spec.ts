@@ -1,5 +1,6 @@
+import { describe, it, expect } from "vitest";
 import { chain } from "../Chain";
-import { Iter } from "../Iter";
+import type { Iter } from "../Iter";
 
 describe("chain.pipe", () => {
     it("calls an 'operator' function that transforms one Iter to another", async () => {

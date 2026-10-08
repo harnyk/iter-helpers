@@ -1,13 +1,13 @@
-/* eslint-disable indent */
 import { chain } from "./Chain";
 import { Fifo } from "./Fifo";
-import { Iter } from "./Iter";
+import type { Iter } from "./Iter";
 
 type Iteratee<T> = T extends Iter<infer U> ? U : never;
 
-export class Mux<T extends Iter<unknown>, E extends Iteratee<T> = Iteratee<T>>
-    implements AsyncIterable<E>
-{
+export class Mux<
+    T extends Iter<unknown>,
+    E extends Iteratee<T> = Iteratee<T>,
+> implements AsyncIterable<E> {
     constructor(private inputs: T[]) {}
 
     [Symbol.asyncIterator](): AsyncIterator<E> {

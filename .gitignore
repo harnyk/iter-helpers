@@ -148,3 +148,9 @@ lib
 docs/superpowers/plans/
 
 dist
+
+# documentation site
+website/build
+website/.docusaurus
+website/docs/api
+website/.snippets

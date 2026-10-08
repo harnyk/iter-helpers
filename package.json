@@ -1,15 +1,15 @@
 {
-    "name": "@sweepbright/iter-helpers",
-    "version": "0.6.0",
-    "description": "",
+    "name": "@harnyk/iter-helpers",
+    "version": "1.0.0-rc.0",
+    "description": "Convenient helpers for working with sync and async iterators",
     "repository": {
         "type": "git",
-        "url": "https://github.com/sweepbright/iter-helpers"
+        "url": "git+https://github.com/harnyk/iter-helpers.git"
     },
     "license": "MIT",
     "author": {
         "name": "Mark Harnyk",
-        "email": "markh@sweepbright.com"
+        "email": "markharnyk@gmail.com"
     },
     "contributors": [
         {
@@ -21,25 +21,27 @@
             "email": "technical@sweepbright.com"
         }
     ],
-    "main": "lib/main.js",
-    "types": "lib/main.d.ts",
+    "main": "./dist/main.cjs",
+    "types": "./dist/main.d.ts",
     "files": [
-        "lib"
+        "dist"
     ],
     "scripts": {
-        "build": "tsc",
+        "build": "tsup",
         "check-types": "tsc --noEmit",
         "lint": "eslint .",
         "test": "vitest run",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "test:watch": "vitest",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "check-package": "publint && attw --pack . && node scripts/smoke.mjs && node scripts/smoke.cjs"
     },
     "dependencies": {
         "@harnyk/chan": "^0.1.1"
     },
     "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.5",
         "@eslint/js": "^10.0.1",
         "@types/node": "^22.20.5",
         "@vitest/coverage-v8": "^5.0.3",
@@ -47,10 +49,30 @@
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.13.0",
         "prettier": "3.9.9",
+        "publint": "^0.3.25",
+        "tsup": "^8.5.1",
         "tsx": "^4.23.15",
         "typescript": "~6.0.3",
         "typescript-eslint": "^8.71.1",
         "vitest": "^5.0.3"
     },
-    "packageManager": "pnpm@10.28.0"
+    "packageManager": "pnpm@10.28.0",
+    "type": "module",
+    "module": "./dist/main.js",
+    "engines": {
+        "node": ">=22"
+    },
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/main.d.ts",
+                "default": "./dist/main.js"
+            },
+            "require": {
+                "types": "./dist/main.d.cts",
+                "default": "./dist/main.cjs"
+            }
+        }
+    }
 }

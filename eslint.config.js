@@ -13,4 +13,9 @@ export default tseslint.config(
             globals: globals.node,
         },
     },
+    {
+        // the CJS smoke test deliberately checks the `require()` entry point
+        files: ["**/*.cjs"],
+        rules: { "@typescript-eslint/no-require-imports": "off" },
+    },
 );

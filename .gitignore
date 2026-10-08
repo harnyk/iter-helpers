@@ -146,3 +146,5 @@ dist
 lib
 # Superpowers implementation plans are local only
 docs/superpowers/plans/
+
+dist

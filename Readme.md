@@ -1,3 +1,5 @@
+> Requires Node.js 22 or newer.
+
 # Iter Helpers
 
 This project provides a collection of helper functions for working with asyncronous iterators in TypeScript.
@@ -7,7 +9,7 @@ This project provides a collection of helper functions for working with asyncron
 To install the package, run the following command:
 
 ```
-npm install @sweepbright/iter-helpers
+pnpm add @harnyk/iter-helpers
 ```
 
 ## Usage

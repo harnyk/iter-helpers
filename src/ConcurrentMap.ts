@@ -2,12 +2,22 @@ import { Fifo } from "./Fifo";
 import type { Iter } from "./Iter";
 import type { OperatorObject } from "./Operator";
 
+/**
+ * Options of `concurrentMap`.
+ */
 export interface ConcurrentMapOptions {
+    /** The maximum number of `mapper` calls running at the same time. */
     concurrency: number;
+    /** Called when a task starts; task ids count up from 0. */
     onTaskStarted?: (taskId: number) => void;
+    /** Called when a task finishes, successfully or not. */
     onTaskCompleted?: (taskId: number) => void;
 }
 
+/**
+ * The operator object behind `concurrentMap`. Prefer the `concurrentMap`
+ * function or the chain method.
+ */
 export class ConcurrentMap<
     Input,
     Output,
@@ -121,6 +131,37 @@ export class ConcurrentMap<
     };
 }
 
+/**
+ * Creates an operator like `map` that runs up to `options.concurrency`
+ * `mapper` calls at the same time.
+ *
+ * Results are emitted in the order the calls complete, which is not
+ * necessarily the order of the input.
+ *
+ * If `mapper` throws and an `errorMapper` is given, its return value is
+ * emitted instead.
+ *
+ * @param options - see `ConcurrentMapOptions`
+ * @param mapper - transforms an item; may be asynchronous
+ * @param errorMapper - turns an error thrown by `mapper` into a value
+ * @returns an operator object
+ *
+ * @example
+ * ```ts
+ * import { setTimeout as sleep } from "node:timers/promises";
+ *
+ * const delays = [60, 10, 30];
+ * const work = async (ms: number) => {
+ *     await sleep(ms);
+ *     return ms;
+ * };
+ *
+ * await chain(delays).concurrentMap({ concurrency: 3 }, work).toArray();
+ * // => [10, 30, 60]
+ * await chain(delays).concurrentMap({ concurrency: 1 }, work).toArray();
+ * // => [60, 10, 30]
+ * ```
+ */
 export function concurrentMap<Input, Output, ErrorOutput = never>(
     options: ConcurrentMapOptions,
     mapper: (req: Input) => Promise<Output> | Output,

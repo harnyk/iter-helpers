@@ -30,6 +30,20 @@ class Chain<I> implements AsyncIterable<I> {
      *
      * Also, for convenience, an operator can be an object with a `process` method,
      * which is an operator function itself.
+     *
+     * @example
+     * ```ts
+     * function double(source: Iter<number>): Iter<number> {
+     *     return (async function* () {
+     *         for await (const n of source) {
+     *             yield n * 2;
+     *         }
+     *     })();
+     * }
+     *
+     * await chain([1, 2]).pipe(double).toArray(); // => [2, 4]
+     * await chain([1, 2]).pipe({ process: double }).toArray(); // => [2, 4]
+     * ```
      */
     pipe<O>(op: Operator<I, O>) {
         if (typeof op === "function") {
@@ -43,6 +57,15 @@ class Chain<I> implements AsyncIterable<I> {
      *
      * Optionally, a callback can be provided.
      * It will be called for each item in the iteration.
+     *
+     * @example
+     * ```ts
+     * const seen: number[] = [];
+     * await chain([1, 2, 3]).consume((n) => {
+     *     seen.push(n);
+     * });
+     * // seen => [1, 2, 3]
+     * ```
      */
     async consume(callback?: (value: I) => void | Promise<void>) {
         for await (const value of this.source) {
@@ -147,14 +170,30 @@ class Chain<I> implements AsyncIterable<I> {
         );
     }
 
+    /**
+     * Passes through only the first `size` items (at least 1) and stops
+     * iterating the source.
+     *
+     * @see {@link take}
+     */
     take(size: number): Chain<I> {
         return this.pipe(take(size));
     }
 
+    /**
+     * Drops the first `size` items.
+     *
+     * @see {@link skip}
+     */
     skip(size: number): Chain<I> {
         return this.pipe(skip(size));
     }
 
+    /**
+     * Accumulates items into a value and emits it on demand.
+     *
+     * @see {@link bufferize}
+     */
     bufferize<O>(options: BufferizeOptions<I, O>): Chain<O> {
         return this.pipe(bufferize(options));
     }
@@ -168,10 +207,23 @@ class Chain<I> implements AsyncIterable<I> {
 }
 
 /**
- * Create a new chain
+ * Wraps an iterable in a chain, on which operators can be applied one after
+ * another with methods such as `map`, `filter`, `batch` or `pipe`.
  *
- * Chain is a wrapper allowing to perform a chain of operations on an iterable.
- * Such operations can be various transformations of data using methods of the chain.
+ * The chain is itself an `AsyncIterable`; finish it with `toArray()` or
+ * `consume()`, or iterate it with `for await`.
+ *
+ * @param source - any `Iter`: an array, a generator, an async generator, ...
+ *
+ * @example
+ * ```ts
+ * const result = await chain(range(1, 6))
+ *     .map((n) => n * 2)
+ *     .skip(1)
+ *     .take(3)
+ *     .toArray();
+ * // => [4, 6, 8]
+ * ```
  */
 export function chain<T>(source: Iter<T>) {
     return new Chain(source);

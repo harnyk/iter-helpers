@@ -1,6 +1,22 @@
 import { bufferize } from "./Bufferize";
 import type { OperatorFunction } from "./Operator";
 
+/**
+ * Creates an operator that splits the source into groups of `size` items and
+ * emits only the first and the last item of each group as a pair. The last
+ * group may be smaller; a group of one item yields that item twice.
+ *
+ * @param size - the number of items in a group
+ * @returns an operator function
+ *
+ * @example
+ * ```ts
+ * const result = await chain(["a", "b", "c", "d", "e", "f", "g"])
+ *     .interval(3)
+ *     .toArray();
+ * // => [["a", "c"], ["d", "f"], ["g", "g"]]
+ * ```
+ */
 export function interval<T>(size: number): OperatorFunction<T, [T, T]> {
     return bufferize({
         getInitialValue: (): [T, T] | null => null,

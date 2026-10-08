@@ -2,14 +2,48 @@ import { Fifo } from "./Fifo";
 import type { Iter } from "./Iter";
 import type { OperatorFunction } from "./Operator";
 
+/**
+ * Options of `bufferize`: how items are accumulated and when the accumulated
+ * value is emitted.
+ *
+ * @typeParam T - the type of the incoming items
+ * @typeParam R - the type of the accumulated (and emitted) value
+ */
 export interface BufferizeOptions<T, R> {
+    /** Creates the empty accumulator at the start and after every flush. */
     getInitialValue: () => R;
+    /** Creates the accumulator that follows a flush; defaults to `getInitialValue`. */
     getNextInitialValue?: (acc: R) => R;
+    /** Folds an incoming item into the accumulator. */
     reducer: (acc: R, value: T) => R;
+    /** Decides whether to emit the accumulator after an item; the third argument is the number of items accumulated so far. Defaults to never. */
     shouldFlush?: (acc: R, value: T, bufferizedItemsCount: number) => boolean;
+    /** Emits the accumulator this many milliseconds after its first item, even if `shouldFlush` did not fire. */
     timeFrame?: number;
 }
 
+/**
+ * Creates an operator that accumulates incoming items into a value and emits
+ * that value on demand. `batch` and `interval` are built on it.
+ *
+ * Whatever is left in the accumulator when the source ends is emitted as a
+ * last value.
+ *
+ * @param options - see `BufferizeOptions`
+ * @returns an operator function
+ *
+ * @example
+ * ```ts
+ * const sums = await chain([1, 2, 3, 4, 5])
+ *     .bufferize({
+ *         getInitialValue: () => 0,
+ *         reducer: (acc: number, value: number) => acc + value,
+ *         shouldFlush: (_acc, _value, count) => count >= 2,
+ *     })
+ *     .toArray();
+ * // => [3, 7, 5]
+ * ```
+ */
 export function bufferize<T, R>({
     getInitialValue,
     getNextInitialValue = getInitialValue,

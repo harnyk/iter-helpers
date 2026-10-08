@@ -1,9 +1,38 @@
 import { CompatChan } from "@harnyk/chan";
 
+/**
+ * Options of `Fifo`.
+ */
 export interface FifoOptions {
+    /** The number of queued items at which `send` starts to wait for consumers. Unlimited by default. */
     highWatermark?: number;
 }
 
+/**
+ * An asynchronous queue that is also an `AsyncIterable`.
+ *
+ * Producers call `send` (which waits when the queue is full, giving back
+ * pressure) and finish with `end`; consumers iterate the fifo with `for await`.
+ *
+ * @example
+ * ```ts
+ * const fifo = new Fifo<number>();
+ *
+ * const consumed = (async () => {
+ *     const items: number[] = [];
+ *     for await (const item of fifo) {
+ *         items.push(item);
+ *     }
+ *     return items;
+ * })();
+ *
+ * await fifo.send(1);
+ * await fifo.send(2);
+ * fifo.end();
+ *
+ * await consumed; // => [1, 2]
+ * ```
+ */
 export class Fifo<T> implements AsyncIterable<T> {
     #ch: CompatChan<T>;
 
@@ -22,21 +51,20 @@ export class Fifo<T> implements AsyncIterable<T> {
     }
 
     /**
-     * End the queue.
+     * Ends the queue: no more items can be sent, and a `send` after this
+     * rejects with `chan is closed`.
      *
-     * This method stops the queue from pushing more items.
-     *
-     * If the queue has items and it's being iterated over,
-     * the items will eventually be flushed, then the iteration will stop.
-     *
-     * After the `end` method is called, calls to `send` will be rejected.
-     *
-     * Resolves once all items are read by consumers.
+     * Items already in the queue are still delivered to consumers; the
+     * iteration finishes after them.
      */
     end(): void {
         return this.#ch.close();
     }
 
+    /**
+     * Queue statistics: the peak length reached by the queued data, the
+     * waiting writers and the waiting readers.
+     */
     get stat() {
         return this.#ch.stat;
     }

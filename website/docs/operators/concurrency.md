@@ -21,7 +21,7 @@ As in `map`, an optional third argument turns an error thrown by the mapper into
 
 ## Requests with a concurrency limit
 
-Thousands of product pages must be fetched from an API that tolerates about eight requests at a time. `concurrentMap` keeps eight requests in flight and reads the next id as soon as one of them finishes. The error mapper records the failed ids instead of ending the whole run.
+Thousands of product pages must be fetched from an API that tolerates about eight requests at a time. `concurrentMap` keeps eight requests in flight and starts the next one as soon as one of them finishes. The error mapper records the failed ids instead of ending the whole run.
 
 ```ts
 type Details = { id: string; price: number };

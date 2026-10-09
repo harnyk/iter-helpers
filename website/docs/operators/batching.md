@@ -39,11 +39,11 @@ await chain(rows)
     .consume((batch) => db.insertMany(batch));
 ```
 
-`consume` waits for every insert before it takes the next batch, and `batch` reads the source only a batch or two ahead of its consumer. A slow database therefore slows down the reading instead of filling the memory.
+`consume` waits for every insert before it takes the next batch, and a `batch` with only a size reads the source just a batch or two ahead of its consumer. A slow database therefore slows down the reading instead of filling the memory.
 
 ### Shipping logs
 
-Log records are sent to a collector in batches of 100. When records are rare, the time frame makes sure that a record waits at most a second before it is shipped.
+Log records are sent to a collector in batches of 100. When records are rare, the time frame makes sure that a record waits at most a second before its batch is emitted.
 
 ```ts
 type LogRecord = { level: "info" | "error"; message: string };
@@ -53,6 +53,12 @@ declare function ship(records: LogRecord[]): Promise<void>;
 
 await chain(logs).batch({ size: 100, timeFrame: 1000 }).consume(ship);
 ```
+
+:::note
+
+A batch emitted because its time frame ran out does not wait for the consumer. When the consumer is slower than the time frame, such batches queue up in memory and the source is not slowed down. Keep the time frame longer than a typical `ship` call.
+
+:::
 
 See [`batch`](../api/functions/batch.md) and [`BatchOptions`](../api/type-aliases/BatchOptions.md).
 
@@ -69,7 +75,7 @@ This is what `interval` was made for. A job runs on a schedule and processes the
 
 ```ts
 declare const db: {
-    // the timestamps of the rows created after `since`, ascending
+    // the timestamps of the rows created at or after `since`, ascending
     timestamps(since: Date): AsyncIterable<Date>;
     // ... WHERE created_at BETWEEN $1 AND $2
     processWindow(from: Date, to: Date): Promise<void>;
@@ -87,11 +93,11 @@ await chain(db.timestamps(lastCheckpoint))
 
 The windows hold the same number of rows, not the same stretch of time: a busy hour gives many windows, a quiet night gives one, and every heavy query does about the same amount of work. Only a pair of timestamps is kept per window, so memory does not grow with the window size.
 
-The windows are processed one after another on purpose: after every window, everything up to its end is done, and the checkpoint is correct. If the job fails, the next run starts from the last saved checkpoint.
+The windows are processed one after another on purpose: after every window, everything up to its end is done, and the checkpoint is correct. If the job fails, the next run starts from the last saved checkpoint. It includes the checkpoint itself, so that a row added later with the same timestamp is not lost; the rows at that timestamp are processed again.
 
 :::warning
 
-Rows that share a timestamp can sit on both sides of a window boundary. `BETWEEN` includes both ends, so such rows are selected by two windows. Make the processing idempotent, for example with an upsert, so that handling a row twice does no harm.
+Rows that share a timestamp can sit on both sides of a window boundary. `BETWEEN` includes both ends, so such rows are selected by two windows, and the rows at a checkpoint are selected again by the next run. Make the processing idempotent, for example with an upsert, so that handling a row twice does no harm.
 
 :::
 
@@ -163,6 +169,6 @@ await chain(measurements)
     .consume(report);
 ```
 
-The time frame starts with the first item of a window, so a quiet period sends no empty report.
+The time frame starts with the first item of a window, so a quiet period sends no empty report. As with `batch`, a flush caused by the time frame does not wait for the consumer: if `report` takes longer than ten seconds, reports queue up in memory.
 
 See [`bufferize`](../api/functions/bufferize.md) and [`BufferizeOptions`](../api/interfaces/BufferizeOptions.md).

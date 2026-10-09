@@ -107,7 +107,7 @@ await chain(mux([orders, refunds]))
     .consume();
 ```
 
-`mux` does not prioritise its inputs: a queue that produces more gets more of the workers. When one input fails, the merged iteration ends with its error; see [Errors](../errors.md).
+`mux` does not prioritise its inputs. When both queues have jobs waiting, they take turns, so a busy queue cannot starve the other; when one of them is slow to produce, the other gets the free workers. When one input fails, the merged iteration ends with its error; see [Errors](../errors.md).
 
 See [`mux`](../api/functions/mux.md) in the API reference.
 
@@ -165,7 +165,7 @@ for await (const message of messages) {
 }
 ```
 
-Once 100 messages are queued, `send` waits, so the handler waits and the client stops delivering until the consumer catches up. Without `highWatermark` the queue has no limit and grows as long as the consumer is slower than the messages. When the subscription fails, `end(error)` makes the loop throw that error after the queued messages.
+Once 100 messages are queued, `send` waits, so the handler waits and the client stops delivering until the consumer catches up. Without `highWatermark` the queue has no limit and grows as long as the consumer is slower than the messages. When the subscription fails, `end(error)` makes the loop throw that error after the queued messages. If the loop stops early, by `break` or an exception, nobody reads the fifo any more and the handler waits in `send` forever: unsubscribe the client at that point.
 
 ### A side channel for logs
 
@@ -177,14 +177,23 @@ type LogRecord = { level: "info" | "error"; message: string };
 
 declare const rows: AsyncIterable<Row>;
 declare const db: { insertMany(rows: Row[]): Promise<void> };
-declare function shipLogs(records: LogRecord[]): Promise<void>;
+declare function shipLogs(
+    records: LogRecord[],
+    signal: AbortSignal,
+): Promise<void>;
 
 const logs = new Fifo<LogRecord>({ highWatermark: 1000 });
 
 const shipping = chain(logs)
     .batch({ size: 100, timeFrame: 1000 })
-    // a failing logging service must not stop the import
-    .consume((records) => shipLogs(records).catch(() => {}));
+    .consume(async (records) => {
+        // a failing or hanging logging service must not stop the import
+        try {
+            await shipLogs(records, AbortSignal.timeout(5000));
+        } catch {
+            // the records are lost; the import goes on
+        }
+    });
 
 try {
     await chain(rows)
@@ -206,7 +215,7 @@ In `finally` the fifo is ended whether the import succeeded or failed, and the r
 
 :::warning
 
-If the consumer of a fifo stops, nobody takes items out of it any more: once it is full, every `send` waits forever. That is why shipping errors are caught inside the consumer instead of ending it. The high watermark leaves room for bursts, so a slow logging service does not slow the import down right away.
+If the consumer of a fifo stops, nobody takes items out of it any more: once it is full, every `send` waits forever. That is why the consumer catches every shipping error, including one thrown synchronously, and gives each call a timeout: a call that never settles would stop the consumer just the same. The high watermark leaves room for bursts; a logging service that is slow for longer fills the queue and then slows the import down.
 
 :::
 

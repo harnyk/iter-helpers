@@ -28,7 +28,9 @@ const maxId = await db.maxId();
 
 await chain(range(0, maxId + 1, STEP))
     .map((from): [number, number] => [from, Math.min(from + STEP - 1, maxId)])
-    .concurrentMap({ concurrency: 4 }, ([from, to]) => db.processRange(from, to))
+    .concurrentMap({ concurrency: 4 }, ([from, to]) =>
+        db.processRange(from, to),
+    )
     .consume();
 ```
 
@@ -151,10 +153,12 @@ declare const client: {
 
 const messages = new Fifo<Message>({ highWatermark: 100 });
 
-client.subscribe("orders", (message) => messages.send(message)).then(
-    () => messages.end(),
-    (error) => messages.end(error),
-);
+client
+    .subscribe("orders", (message) => messages.send(message))
+    .then(
+        () => messages.end(),
+        (error) => messages.end(error),
+    );
 
 for await (const message of messages) {
     console.log(message.id);

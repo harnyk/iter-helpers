@@ -30,8 +30,7 @@ import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 
 type Parsed =
-    | { ok: true; record: unknown }
-    | { ok: false; line: string; error: unknown };
+    { ok: true; record: unknown } | { ok: false; line: string; error: unknown };
 
 const lines = createInterface({ input: createReadStream("export.jsonl") });
 
@@ -137,9 +136,7 @@ import { createInterface } from "node:readline";
 
 const input = createReadStream("export.jsonl");
 try {
-    const preview = await chain(createInterface({ input }))
-        .take(5)
-        .toArray();
+    const preview = await chain(createInterface({ input })).take(5).toArray();
     console.log(preview);
 } finally {
     input.destroy();
